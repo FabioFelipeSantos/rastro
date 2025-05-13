@@ -1,0 +1,108 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./server
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    - name: Configurando o Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Verificar versão do Python
+      run: |
+        PYTHON_VERSION=$(python --version)
+        echo "Versão do Python em uso: $PYTHON_VERSION"
+
+    - name: Instalar Poetry 2.1.2
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Verificar versão do Poetry
+      run: |
+        POETRY_VERSION=$(poetry --version)
+        echo "Versão do Poetry em uso: $POETRY_VERSION"
+
+    - name: Configurar Poetry para não criar ambientes virtuais
+      run: poetry config virtualenvs.create false
+
+    - name: Instalar dependências
+      run: poetry install --no-interaction --no-root
+
+    - name: Configurar arquivo.env
+      run: |
+        cat > .env << EOF
+        POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+        POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
+        PROJECT_ENV=${{ secrets.PROJECT_ENV }}
+        PORT=${{ secrets.PORT }}
+        EOF
+
+    - name: Configurar docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Iniciar containers Docker
+      run: docker compose up -d
+
+    - name: Aguardar inicialização do PostgreSQL
+      run: |
+        echo "Aguardando inicialização do PostgreSQL"
+        sleep 10
+        docker ps
+
+    - name: Executar migrations
+      run: |
+        echo "Rodando migrations"
+        poetry run python manage.py makemigrations
+        poetry run python manage.py migrate
+        echo "Migrações executadas com sucesso"
+
+    # - name: Executar testes
+    #   run: |
+    #     echo "Preparando banco de dados de teste..."
+    #     PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
+    #     echo "Executando testes unitários e de integração"
+    #     poetry run pytest tests/ -v --cov=app --cov-branch --cov-report=xml
+    #     if [ $? -ne 0 ]; then
+    #       echo "ERRO: Os testes falharam!"
+    #       exit 1
+    #     fi
+    #     echo "Todos os testes foram executados com sucesso"
+
+    # - name: Upload cobertura de código
+    #   uses: codecov/codecov-action@v5
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }}
+    #     files: ./coverage.xml
+
+    - name: Iniciar API em segundo plano
+      run: |
+        poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
+        sleep 10
+
+    - name: Verificar se API está rodando
+      run: |
+        API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000)
+        echo "Status da API: $API_STATUS"
+        if [ $API_STATUS != 200 ]; then
+          echo "ERRO: API não está rodando corretamente"
+          exit 1
+        fi
+        echo "API está rodando corretamente"
