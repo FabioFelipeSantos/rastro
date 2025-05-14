@@ -1,5 +1,6 @@
 from django.db.models import Q
 from twitter.models import User
+from rest_framework.response import Response
 
 
 class UserService:
@@ -19,22 +20,37 @@ class UserService:
         """
         queryset = User.objects.all()
 
+        model_fields = [field.name for field in User._meta.fields]
+        text_fields = ["first_name", "last_name", "nickname", "email"]
+
         for param, value in query_params.items():
             if param in ["ordering", "limit", "offset"]:
                 continue
 
-            if param in ["first_name", "last_name", "nickname", "email"]:
-                queryset = queryset.filter(Q(**{f"{param}__icontains": value}))
-            elif param == "role":
-                queryset = queryset.filter(role=value)
-            elif param == "is_active":
-                is_active = value.lower() in ("true", "t", "1", "yes")
-                queryset = queryset.filter(is_active=is_active)
+            if param in model_fields:
+                if param in text_fields:
+                    queryset = queryset.filter(Q(**{f"{param}__icontains": value}))
+                elif param == "is_active":
+                    is_active = value.lower() in ("true", "t", "1", "yes")
+                    queryset = queryset.filter(is_active=is_active)
+                else:
+                    queryset = queryset.filter(**{param: value})
 
         ordering = query_params.get("ordering")
         if ordering:
             ordering_fields = ordering.split(",")
             queryset = queryset.order_by(*ordering_fields)
+
+        try:
+            offset = int(query_params.get("offset", 0))
+            limit = int(query_params.get("limit", 100))
+
+            if limit > 100:
+                limit = 100
+
+            queryset = queryset[offset : offset + limit]
+        except (ValueError, TypeError):
+            queryset = queryset[:100]
 
         return queryset
 

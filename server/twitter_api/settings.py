@@ -31,7 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-APPEND_SLASH = False
+APPEND_SLASH = True
 
 
 # Application definition
@@ -144,8 +144,12 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 10,
+    "DEFAULT_RENDERER_CLASSES": [
+        "twitter.response.StandardJSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+    "EXCEPTION_HANDLER": "twitter.response.custom_exception_handler",
+    "JSON_ENCODER": "twitter.response.CircularReferenceEncoder",
 }
 
 AUTH_USER_MODEL = "twitter.User"

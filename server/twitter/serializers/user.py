@@ -38,12 +38,15 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Validação que envolve múltiplos campos (password e confirmation)
         """
-        if data.get("password") != data.get("password_confirmation"):
-            raise serializers.ValidationError(
-                {"password_confirmation": "As senhas não conferem."}
-            )
+        if "password" in data:
+            if data.get("password") != data.get("password_confirmation"):
+                raise serializers.ValidationError(
+                    {"password_confirmation": "As senhas não conferem."}
+                )
 
-        data.pop("password_confirmation")
+            if "password_confirmation" in data:
+                data.pop("password_confirmation")
+
         return data
 
     def create(self, validated_data):
