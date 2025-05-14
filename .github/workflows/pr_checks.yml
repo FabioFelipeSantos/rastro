@@ -74,23 +74,23 @@ jobs:
         poetry run python manage.py migrate
         echo "Migrações executadas com sucesso"
 
-    # - name: Executar testes
-    #   run: |
-    #     echo "Preparando banco de dados de teste..."
-    #     PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
-    #     echo "Executando testes unitários e de integração"
-    #     poetry run pytest tests/ -v --cov=app --cov-branch --cov-report=xml
-    #     if [ $? -ne 0 ]; then
-    #       echo "ERRO: Os testes falharam!"
-    #       exit 1
-    #     fi
-    #     echo "Todos os testes foram executados com sucesso"
+    - name: Executar testes
+      run: |
+        echo "Preparando banco de dados de teste..."
+        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
+        echo "Executando testes unitários e de integração"
+        poetry run pytest -v --cov --cov-branch --cov-report=xml
+        if [ $? -ne 0 ]; then
+          echo "ERRO: Os testes falharam!"
+          exit 1
+        fi
+        echo "Todos os testes foram executados com sucesso"
 
-    # - name: Upload cobertura de código
-    #   uses: codecov/codecov-action@v5
-    #   with:
-    #     token: ${{ secrets.CODECOV_TOKEN }}
-    #     files: ./coverage.xml
+    - name: Upload cobertura de código
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
 
     - name: Iniciar API em segundo plano
       run: |
