@@ -1,5 +1,9 @@
-from django.urls import include, path
+from .auth import urlpatterns as auth_urlpatterns
+from .users import urlpatterns as user_urlpatterns
 
-from .users import urlpatterns as user_urls
+# from .tweets import urlpatterns as tweet_urlpatterns
 
-urlpatterns = user_urls
+urlpatterns = []
+urlpatterns.extend(auth_urlpatterns)
+urlpatterns.extend(user_urlpatterns)
+# urlpatterns.extend(tweet_urlpatterns)

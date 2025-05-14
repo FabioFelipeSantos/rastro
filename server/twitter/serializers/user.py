@@ -1,9 +1,12 @@
 from rest_framework import serializers
+
 from twitter.models import User
+from twitter.utils import password_validation
 
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    password_confirmation = serializers.CharField(write_only=True)
     is_admin = serializers.ReadOnlyField()
 
     class Meta:
@@ -15,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
             "nickname",
             "email",
             "password",
+            "password_confirmation",
             "role",
             "is_active",
             "is_admin",
@@ -22,6 +26,25 @@ class UserSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_password(self, value: str):
+        confirmation = password_validation(value)
+        if not confirmation["is_valid"]:
+            raise serializers.ValidationError(confirmation["message"])
+
+        return value
+
+    def validate(self, data):
+        """
+        Validação que envolve múltiplos campos (password e confirmation)
+        """
+        if data.get("password") != data.get("password_confirmation"):
+            raise serializers.ValidationError(
+                {"password_confirmation": "As senhas não conferem."}
+            )
+
+        data.pop("password_confirmation")
+        return data
 
     def create(self, validated_data):
         return User.objects.create_user(

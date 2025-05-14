@@ -1,3 +1,4 @@
 from .user import UserSerializer
+from .login import LoginSerializer
 
-__all__ = ["UserSerializer"]
+__all__ = ["UserSerializer", "LoginSerializer"]

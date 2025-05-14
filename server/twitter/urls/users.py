@@ -1,11 +1,16 @@
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from twitter.viewsets import UserViewSet
+from twitter.viewsets import PublicUserViewSet, PrivateUserViewSet
 
+# Router para rotas públicas (sem autenticação)
 public_router = DefaultRouter()
-public_router.register(r"users", UserViewSet, basename="public-users")
+public_router.register(r"public/users", PublicUserViewSet, basename="public-users")
 
-# authenticated_router = DefaultRouter()
-# authenticated_router.register(r"users", UserViewSet, basename="users")
+# Router para rotas privadas (com autenticação)
+private_router = DefaultRouter()
+private_router.register(r"users", PrivateUserViewSet, basename="private-users")
 
-urlpatterns = public_router.urls
-# urlpatterns = public_router.urls + authenticated_router.urls
+# Combina as rotas dos dois routers
+urlpatterns = []
+urlpatterns.extend(public_router.urls)
+urlpatterns.extend(private_router.urls)
