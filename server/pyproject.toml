@@ -1,5 +1,5 @@
 [project]
-name = "twitter-clone-ebac"
+name = "twitter-server"
 version = "0.1.0"
 description = ""
 authors = [
@@ -12,9 +12,16 @@ dependencies = [
     "djangorestframework (>=3.16.0,<4.0.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "python-dotenv (>=1.1.0,<2.0.0)",
+    "pytest (>=8.3.5,<9.0.0)",
+    "pytest-django (>=4.11.1,<5.0.0)",
+    "coverage (>=7.8.0,<8.0.0)",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^6.1.1"
+
