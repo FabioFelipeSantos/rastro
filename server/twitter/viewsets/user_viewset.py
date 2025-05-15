@@ -6,19 +6,7 @@ from twitter.models import User
 from twitter.serializers import UserSerializer
 from twitter.services import UserService
 from twitter.response import ApiResponse, standard_response
-
-
-class IsOwnerOrAdmin(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        return str(obj.id) == str(request.user.id) or request.user.role == "admin"
-
-
-class IsAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and request.user.role == "admin"
-
-    def has_object_permission(self, request, view, obj):
-        return request.user.role == "admin"
+from twitter.permissions import IsAdmin, IsOwnerOrAdmin
 
 
 class UserViewSet(viewsets.ModelViewSet):
