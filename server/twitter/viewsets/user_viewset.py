@@ -202,3 +202,89 @@ class UserViewSet(viewsets.ModelViewSet):
             message="Usuário deletado com sucesso",
             status_code=200,
         )
+
+    @action(detail=False, methods=["post"], url_path="follow/(?P<user_id>[^/.]+)")
+    @standard_response
+    def follow(self, request, user_id=None):
+        """
+        Endpoint para o usuário logado seguir outro usuário
+
+        Args:
+            request: Requisição com o usuário logado
+            user_id: ID do usuário a ser seguido
+
+        Returns:
+            ApiResponse: Resposta formatada com os dados dos usuários
+        """
+        try:
+            follower = request.user
+
+            follow_data = UserService.follow_user(follower, user_id)
+
+            return ApiResponse(
+                data=follow_data, message="Usuário seguido com sucesso", status_code=201
+            )
+
+        except ValueError as e:
+            return ApiResponse(data={"error": str(e)}, message=str(e), status_code=400)
+
+        except Exception as e:
+            return ApiResponse(
+                data={"error": str(e)},
+                message="Erro ao processar a solicitação",
+                status_code=500,
+            )
+
+    @action(detail=False, methods=["post"], url_path="unfollow/(?P<user_id>[^/.]+)")
+    @standard_response
+    def unfollow(self, request, user_id=None):
+        """
+        Endpoint para o usuário logado deixar de seguir outro usuário
+        """
+        try:
+            follower = request.user
+            user_to_unfollow = UserService.get_user_by_id(user_id)
+
+            if not user_to_unfollow:
+                return ApiResponse(
+                    data={"error": "Usuário não encontrado"},
+                    message="Usuário não encontrado",
+                    status_code=404,
+                )
+
+            if user_to_unfollow not in follower.following.all():
+                return ApiResponse(
+                    data={"error": "Você não segue este usuário"},
+                    message="Você não segue este usuário",
+                    status_code=400,
+                )
+
+            follower.following.remove(user_to_unfollow)
+
+            result = {
+                "unfollower": {
+                    "id": str(follower.id),
+                    "nickname": follower.nickname,
+                    "followers_count": follower.followers.count(),
+                    "following_count": follower.following.count(),
+                },
+                "unfollowed": {
+                    "id": str(user_to_unfollow.id),
+                    "nickname": user_to_unfollow.nickname,
+                    "followers_count": user_to_unfollow.followers.count(),
+                    "following_count": user_to_unfollow.following.count(),
+                },
+            }
+
+            return ApiResponse(
+                data=result,
+                message="Deixou de seguir o usuário com sucesso",
+                status_code=200,
+            )
+
+        except Exception as e:
+            return ApiResponse(
+                data={"error": str(e)},
+                message="Erro ao processar a solicitação",
+                status_code=500,
+            )
