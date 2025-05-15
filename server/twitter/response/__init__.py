@@ -1,5 +1,5 @@
 from .api_response import ApiResponse, standard_response
-from .standard_render import StandardJSONRenderer, CircularReferenceEncoder
+from .standard_render import StandardJSONRenderer, SafeJSONEncoder
 from .custom_exception_handler import custom_exception_handler
 
 __all__ = [
@@ -7,5 +7,5 @@ __all__ = [
     "standard_response",
     "StandardJSONRenderer",
     "custom_exception_handler",
-    "CircularReferenceEncoder",
+    "SafeJSONEncoder",
 ]

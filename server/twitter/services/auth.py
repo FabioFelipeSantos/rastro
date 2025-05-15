@@ -40,18 +40,23 @@ class AuthService:
     @staticmethod
     def get_user_details(user):
         """Retorna detalhes do usuário, incluindo seguidores e pessoas que segue"""
-        followers = user.followers.all()
-        following = user.following.all()
+        followers = [
+            {"id": str(f.id), "nickname": f.nickname} for f in user.followers.all()
+        ]
+
+        following = [
+            {"id": str(f.id), "nickname": f.nickname} for f in user.following.all()
+        ]
 
         return {
-            "id": user.id,
+            "id": str(user.id),
             "email": user.email,
             "nickname": user.nickname,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "role": user.role,
-            "followers_count": followers.count(),
-            "followers": [{"id": f.id, "nickname": f.nickname} for f in followers],
-            "following_count": following.count(),
-            "following": [{"id": f.id, "nickname": f.nickname} for f in following],
+            "followers_count": len(followers),
+            "followers": followers,
+            "following_count": len(following),
+            "following": following,
         }

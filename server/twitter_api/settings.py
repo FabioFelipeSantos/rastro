@@ -146,10 +146,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": [
         "twitter.response.StandardJSONRenderer",
-        "rest_framework.renderers.BrowsableAPIRenderer",
+        # "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "EXCEPTION_HANDLER": "twitter.response.custom_exception_handler",
-    "JSON_ENCODER": "twitter.response.CircularReferenceEncoder",
+    "JSON_ENCODER": "twitter.response.SafeJSONEncoder",
 }
 
 AUTH_USER_MODEL = "twitter.User"

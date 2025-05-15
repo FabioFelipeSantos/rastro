@@ -13,6 +13,14 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return str(obj.id) == str(request.user.id) or request.user.role == "admin"
 
 
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.role == "admin"
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.role == "admin"
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """
     ViewSet para operações CRUD de usuários
@@ -27,7 +35,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             permission_classes = [permissions.AllowAny]
         elif self.action == "list":
-            permission_classes = [permissions.AllowAny]
+            permission_classes = [permissions.IsAuthenticated, IsAdmin]
         elif self.action in ["update", "partial_update", "destroy"]:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
         else:
@@ -58,16 +66,14 @@ class UserViewSet(viewsets.ModelViewSet):
             message = f"{num_users} usuários encontrados"
 
         serializer = self.get_serializer(queryset, many=True)
-        return ApiResponse(data=serializer.data, message=message, status_code=200)
+        return ApiResponse(data=serializer.data, message=message)
 
     @action(detail=False, methods=["get"])
     @standard_response
     def me(self, request):
         """Endpoint para obter o próprio usuário"""
         serializer = self.get_serializer(request.user)
-        return ApiResponse(
-            data=serializer.data, message="Usuário logado encontrado", status_code=200
-        )
+        return ApiResponse(data=serializer.data, message="Usuário logado encontrado")
 
     @standard_response
     def retrieve(self, request, *args, **kwargs):
@@ -82,9 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         serializer = self.get_serializer(user)
-        return ApiResponse(
-            data=serializer.data, message="Usuário encontrado", status_code=200
-        )
+        return ApiResponse(data=serializer.data, message="Usuário encontrado")
 
     @action(detail=False, methods=["get"])
     @standard_response
@@ -97,7 +101,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return ApiResponse(
             data=serializer.data,
             message="Usuários seguindo encontrados com sucesso",
-            status_code=200,
         )
 
     @action(detail=False, methods=["get"])
@@ -106,14 +109,6 @@ class UserViewSet(viewsets.ModelViewSet):
         """Endpoint para listar usuários que o usuário logado segue"""
         user = request.user
         following = user.following.all()
-        # page = self.paginate_queryset(following)
-
-        # if page is not None:
-        #     serializer = self.get_serializer(page, many=True)
-        #     paginated_data = self.paginator.get_paginated_response(serializer.data).data
-        #     return ApiResponse(
-        #         data=paginated_data, message="Usuários seguidos encontrados com sucesso"
-        #     )
 
         serializer = self.get_serializer(following, many=True)
         return ApiResponse(
@@ -135,7 +130,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 error_data = {
                     "status": 400,
                     "message": "Este email já está em uso.",
-                    "data": {"email": "Email já cadastrado"},
                 }
                 return Response(error_data, status=400)
 
@@ -143,7 +137,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 error_data = {
                     "status": 400,
                     "message": "Este nickname já está em uso.",
-                    "data": {"nickname": "Nickname já cadastrado"},
                 }
                 return Response(error_data, status=400)
 
@@ -165,11 +158,6 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            import traceback
-
-            print(f"ERRO AO CRIAR USUÁRIO: {str(e)}")
-            print(traceback.format_exc())
-
             error_data = {
                 "status": 500,
                 "message": "Erro ao criar usuário",
@@ -184,7 +172,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if str(instance.id) != str(request.user.id) and request.user.role != "admin":
             return ApiResponse(
-                data="Você não tem permissão para editar este usuário.",
                 status_code=403,
                 message="Permissão negada",
             )
@@ -198,7 +185,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return ApiResponse(
             data=serializer.data,
             message="Usuário atualizado com sucesso",
-            status_code=200,
         )
 
     @action(detail=True, methods=["post"])
@@ -209,9 +195,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         user = self.get_object()
         UserService.deactivate_user(user)
-        return ApiResponse(
-            data=None, message="Usuário desativado com sucesso.", status_code=200
-        )
+        return ApiResponse(message="Usuário desativado com sucesso.", status_code=200)
 
     @standard_response
     def destroy(self, request, *args, **kwargs):
@@ -220,7 +204,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if str(instance.id) != str(request.user.id) and request.user.role != "admin":
             return ApiResponse(
-                data="Você não tem permissão para excluir este usuário.",
                 status_code=403,
                 message="Permissão negada",
             )
@@ -228,7 +211,6 @@ class UserViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
 
         return ApiResponse(
-            data=None,
             message="Usuário deletado com sucesso",
             status_code=200,
         )
