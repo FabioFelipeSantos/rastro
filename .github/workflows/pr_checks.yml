@@ -97,12 +97,41 @@ jobs:
         poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
         sleep 10
 
-    - name: Verificar se API está rodando
+    - name: Testar criação de usuário
       run: |
-        API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000)
-        echo "Status da API: $API_STATUS"
-        if [ $API_STATUS != 200 ]; then
-          echo "ERRO: API não está rodando corretamente"
+        echo "Testando criação de usuário via POST..."
+        
+        # Salvar o payload em um arquivo temporário
+        cat > payload.json << EOF
+        {
+            "first_name": "Teste",
+            "last_name": "GH Actions",
+            "nickname": "test_gh",
+            "email": "test@gh.com",
+            "password": "Aa1*+.",
+            "password_confirmation": "Aa1*+."
+        }
+        EOF
+        
+        # Fazer a requisição POST e salvar o resultado
+        RESPONSE=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d @payload.json \
+          -w "\nSTATUS:%{http_code}" \
+          http://localhost:8000/users/)
+        
+        # Extrair o status code da resposta
+        STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+        BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+        
+        echo "Código de status: $STATUS"
+        echo "Resposta da API:"
+        echo "$BODY" | jq . || echo "$BODY"
+        
+        # Verificar se o status é 201 (Created)
+        if [ "$STATUS" != "201" ]; then
+          echo "ERRO: O código de status não é 201 (Created)"
           exit 1
         fi
-        echo "API está rodando corretamente"
+        
+        echo "Criação de usuário realizada com sucesso (Status 201)"
