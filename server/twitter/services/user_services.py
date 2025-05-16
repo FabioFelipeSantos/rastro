@@ -1,3 +1,6 @@
+from typing import TypeVar
+
+from datetime import datetime
 from django.db.models import Q
 from twitter.models import User
 from rest_framework.response import Response
@@ -63,10 +66,19 @@ class UserService:
         return not User.objects.filter(nickname=nickname).exists()
 
     @staticmethod
-    def deactivate_user(user):
+    def deactivate_user(user: User):
+        if not user.is_active:
+            raise ValueError("Usuário já desativado")
+
         user.is_active = False
+        user.disabled_at = datetime.now()
         user.save()
-        return user
+
+    @staticmethod
+    def activate_user(user: User):
+        user.is_active = True
+        user.disabled_at = None
+        user.save()
 
     @staticmethod
     def follow_user(follower, user_to_follow_id):

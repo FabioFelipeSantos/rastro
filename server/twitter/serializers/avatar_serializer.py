@@ -34,14 +34,12 @@ class AvatarUploadSerializer(serializers.Serializer):
 
     def validate_file(self, file):
         """Validação básica do arquivo de imagem"""
-        # Verificar tamanho (5MB)
         max_size = 5 * 1024 * 1024  # 5MB
         if file.size > max_size:
             raise serializers.ValidationError(
                 f"O tamanho da imagem não pode exceder 5MB. Atual: {file.size / (1024 * 1024):.2f}MB"
             )
 
-        # Verificar tipo do arquivo
         content_type = file.content_type.lower()
         if content_type not in ["image/jpeg", "image/png", "image/jpg"]:
             raise serializers.ValidationError(

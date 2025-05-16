@@ -1,6 +1,7 @@
-from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from twitter.models import Bio
 from twitter.serializers import BioSerializer, UserBasicSerializer
@@ -12,6 +13,7 @@ class BioViewSet(viewsets.ModelViewSet):
     serializer_class = BioSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "put", "delete"]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         """Retorna a bio do usuário autenticado"""
@@ -24,13 +26,14 @@ class BioViewSet(viewsets.ModelViewSet):
             user = request.user
             if BioService.get_bio_by_user(user):
                 return ApiResponse(
-                    data={"error": "Este usuário já possui uma bio."},
+                    data=None,
                     message="Este usuário já possui uma bio.",
                     status_code=400,
                 )
 
-            # Validar dados usando serializer
-            serializer = self.get_serializer(data=request.data)
+            serializer = self.get_serializer(
+                data=request.data, context={"allow_empty_text": False}
+            )
             if not serializer.is_valid():
                 return ApiResponse(
                     data=serializer.errors,
@@ -38,25 +41,24 @@ class BioViewSet(viewsets.ModelViewSet):
                     status_code=400,
                 )
 
-            # Criar bio usando dados validados
             bio = BioService.create_bio(user, serializer.validated_data)
 
-            # Processar avatar se fornecido
+            avatar_file = None
             avatar_error = None
+
             if "avatar" in request.FILES:
                 avatar_file = request.FILES["avatar"]
+                print(f"FOUND AVATAR: {avatar_file.name}, size: {avatar_file.size}")
+
                 try:
                     avatar = AvatarService.create_avatar(bio, avatar_file)
-                except ValueError as e:
+                except Exception as e:
                     avatar_error = str(e)
 
-            # Recarregar bio para ter dados atualizados com avatar
             bio = Bio.objects.get(id=bio.id)
 
-            # Preparar resposta
             response_data = {
                 "bio": BioSerializer(bio).data,
-                "user": UserBasicSerializer(user).data,
             }
 
             if avatar_error:
@@ -74,6 +76,9 @@ class BioViewSet(viewsets.ModelViewSet):
             )
 
         except Exception as e:
+            import traceback
+
+            print(traceback.format_exc())
             return ApiResponse(
                 data={"detail": str(e)}, message="Erro ao criar bio.", status_code=500
             )
@@ -85,7 +90,6 @@ class BioViewSet(viewsets.ModelViewSet):
             user = request.user
             bio = get_object_or_404(Bio, id=pk, user=user)
 
-            # Validação parcial para permitir atualização de apenas alguns campos
             serializer = self.get_serializer(bio, data=request.data, partial=True)
             if not serializer.is_valid():
                 return ApiResponse(
@@ -94,10 +98,8 @@ class BioViewSet(viewsets.ModelViewSet):
                     status_code=400,
                 )
 
-            # Atualizar bio com dados validados
             bio = BioService.update_bio(bio, serializer.validated_data)
 
-            # Processar avatar se fornecido
             avatar_error = None
             if "avatar" in request.FILES:
                 avatar_file = request.FILES["avatar"]
@@ -106,13 +108,10 @@ class BioViewSet(viewsets.ModelViewSet):
                 except ValueError as e:
                     avatar_error = str(e)
 
-            # Recarregar bio para ter dados atualizados
             bio = Bio.objects.get(id=bio.id)
 
-            # Preparar resposta
             response_data = {
                 "bio": BioSerializer(bio).data,
-                "user": UserBasicSerializer(user).data,
             }
 
             if avatar_error:
@@ -146,7 +145,7 @@ class BioViewSet(viewsets.ModelViewSet):
             BioService.delete_bio(bio)
 
             return ApiResponse(
-                data={"user": UserBasicSerializer(user).data},
+                data=None,
                 message="Bio removida com sucesso.",
                 status_code=200,
             )
@@ -164,7 +163,6 @@ class BioViewSet(viewsets.ModelViewSet):
         return ApiResponse(
             data={
                 "bio": BioSerializer(bio).data,
-                "user": UserBasicSerializer(bio.user).data,
             },
             message="Bio encontrada.",
             status_code=200,

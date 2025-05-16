@@ -18,12 +18,12 @@ class BioSerializer(serializers.ModelSerializer):
         model = Bio
         fields = [
             "id",
-            "user",
             "text",
             "city",
             "state",
             "country",
             "avatar",
+            "user",
             "created_at",
             "updated_at",
         ]
@@ -31,9 +31,9 @@ class BioSerializer(serializers.ModelSerializer):
 
     def validate_text(self, value):
         """Valida que o texto da bio não está vazio"""
-        if not value.strip():
+        if not self.context.get("allow_empty_text", False) and not value.strip():
             raise serializers.ValidationError("O texto da bio não pode estar vazio.")
-        return value.strip()
+        return value.strip() if value else ""
 
     def to_representation(self, instance):
         """

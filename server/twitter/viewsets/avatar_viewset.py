@@ -22,45 +22,50 @@ class AvatarViewSet(viewsets.ViewSet):
         try:
             user = request.user
 
-            # Verificar se o usuário tem uma bio
             bio = BioService.get_bio_by_user(user)
-            if not bio:
-                return ApiResponse(
-                    data={
-                        "error": "Você precisa criar uma bio antes de adicionar um avatar."
-                    },
-                    message="Você precisa criar uma bio antes de adicionar um avatar.",
-                    status_code=400,
-                )
+            bio_created = False
 
-            # Validar o arquivo usando serializer
+            if not bio:
+                bio = BioService.create_bio(
+                    user,
+                    {"text": "", "city": "", "state": "", "country": "Brasil"},
+                    allow_empty=True,
+                )
+                bio_created = True
+
             serializer = AvatarUploadSerializer(data=request.data)
             if not serializer.is_valid():
+                if bio_created:
+                    bio.delete()
+
                 return ApiResponse(
                     data=serializer.errors,
                     message="Arquivo de avatar inválido.",
                     status_code=400,
                 )
 
-            # Obter arquivo validado e criar avatar
             avatar_file = serializer.validated_data["file"]
             avatar = AvatarService.create_avatar(bio, avatar_file)
 
-            # Recarregar bio para ter dados atualizados
             bio = BioService.get_bio_by_user(user)
+
+            message = "Avatar criado com sucesso."
+            if bio_created:
+                message = (
+                    "Avatar criado com sucesso e bio vazia criada automaticamente."
+                )
 
             return ApiResponse(
                 data={
-                    "bio": BioSerializer(bio).data,
                     "avatar": AvatarSerializer(avatar).data,
-                    "user": UserBasicSerializer(user).data,
+                    "bio_id": BioSerializer(bio).data["id"],
                 },
-                message="Avatar criado com sucesso.",
+                message=message,
                 status_code=201,
             )
 
         except ValueError as e:
-            return ApiResponse(data={"error": str(e)}, message=str(e), status_code=400)
+            return ApiResponse(data=None, message=str(e), status_code=400)
         except Exception as e:
             return ApiResponse(
                 data={"detail": str(e)},
@@ -77,7 +82,7 @@ class AvatarViewSet(viewsets.ViewSet):
 
             if not bio or not hasattr(bio, "avatar"):
                 return ApiResponse(
-                    data={"error": "Você não possui um avatar para remover."},
+                    data=None,
                     message="Você não possui um avatar para remover.",
                     status_code=404,
                 )
@@ -85,21 +90,15 @@ class AvatarViewSet(viewsets.ViewSet):
             avatar = get_object_or_404(Avatar, id=pk)
             if avatar.bio.user != user:
                 return ApiResponse(
-                    data={"error": "Você não tem permissão para remover este avatar."},
+                    data=None,
                     message="Você não tem permissão para remover este avatar.",
                     status_code=403,
                 )
 
             AvatarService.delete_avatar(avatar)
 
-            # Recarregar bio para ter dados atualizados
-            bio = BioService.get_bio_by_user(user)
-
             return ApiResponse(
-                data={
-                    "bio": BioSerializer(bio).data,
-                    "user": UserBasicSerializer(user).data,
-                },
+                data=None,
                 message="Avatar removido com sucesso.",
                 status_code=200,
             )

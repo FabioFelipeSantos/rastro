@@ -4,6 +4,7 @@ from .user_profile_viewset import UserProfileViewSet
 from .admin_user_viewset import AdminUserViewSet
 from .bio_viewset import BioViewSet
 from .avatar_viewset import AvatarViewSet
+from .activate_user import PublicActivateView
 
 __all__ = [
     "UserViewSet",
@@ -12,4 +13,5 @@ __all__ = [
     "AdminUserViewSet",
     "BioViewSet",
     "AvatarViewSet",
+    "PublicActivateView",
 ]

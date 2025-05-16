@@ -46,6 +46,11 @@ class AvatarService:
                 "Apenas arquivos de imagem (JPEG, JPG ou PNG) são permitidos."
             )
 
+        file_name = file.name.lower()
+        valid_extensions = [".jpg", ".jpeg", ".png"]
+        if not any(file_name.endswith(ext) for ext in valid_extensions):
+            raise ValueError("O arquivo deve ter uma extensão .jpg, .jpeg ou .png")
+
         return True
 
     @staticmethod
