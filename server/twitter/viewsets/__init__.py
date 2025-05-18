@@ -5,6 +5,7 @@ from .admin_user_viewset import AdminUserViewSet
 from .bio_viewset import BioViewSet
 from .avatar_viewset import AvatarViewSet
 from .activate_user import PublicActivateView
+from .tweet_viewset import TweetViewSet
 
 __all__ = [
     "UserViewSet",
@@ -14,4 +15,5 @@ __all__ = [
     "BioViewSet",
     "AvatarViewSet",
     "PublicActivateView",
+    "TweetViewSet",
 ]
