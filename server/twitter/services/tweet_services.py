@@ -61,21 +61,33 @@ class TweetService:
             return False
 
     @staticmethod
-    def retweet(user, tweet, associated_tweets=None):
-        """Registra um retweet e associa outros tweets opcionalmente"""
-        retweet, created = Re_Tweet.objects.get_or_create(user=user, tweet=tweet)
+    def retweet(user, original_tweet, text):
+        """
+        Cria um novo tweet como resposta ao tweet original e registra um retweet
 
-        if associated_tweets:
-            for associated_id in associated_tweets:
-                associated_tweet = TweetService.get_tweet_by_id(associated_id)
-                if associated_tweet:
-                    TweetAssociation.objects.get_or_create(
-                        parent_tweet=tweet,
-                        associated_tweet=associated_tweet,
-                        association_type="retweet",
-                    )
+        Args:
+            user: O usuário que está retweetando
+            original_tweet: O tweet original que está sendo retweetado
+            text: O texto do novo tweet (comentário/resposta)
 
-        return retweet, created
+        Returns:
+            tuple: (novo_tweet, retweet)
+        """
+        new_tweet = Tweet.objects.create(user=user, text=text)
+
+        retweet, created = Re_Tweet.objects.get_or_create(
+            user=user, tweet=original_tweet
+        )
+
+        TweetAssociation.objects.create(
+            parent_tweet=original_tweet,
+            associated_tweet=new_tweet,
+            association_type="retweet",
+        )
+
+        new_tweet = Tweet.objects.select_related("user").get(id=new_tweet.id)
+
+        return new_tweet, retweet, created
 
     @staticmethod
     def remove_retweet(user, tweet):
@@ -91,21 +103,33 @@ class TweetService:
             return False
 
     @staticmethod
-    def share_tweet(user, tweet, associated_tweets=None):
-        """Compartilha um tweet e associa outros tweets opcionalmente"""
-        share, created = Share.objects.get_or_create(user=user, tweet=tweet)
+    def share_tweet(user, original_tweet, text=None):
+        """
+        Registra um compartilhamento e opcionalmente cria um novo tweet com comentário
 
-        if associated_tweets:
-            for associated_id in associated_tweets:
-                associated_tweet = TweetService.get_tweet_by_id(associated_id)
-                if associated_tweet:
-                    TweetAssociation.objects.get_or_create(
-                        parent_tweet=tweet,
-                        associated_tweet=associated_tweet,
-                        association_type="share",
-                    )
+        Args:
+            user: O usuário que está compartilhando
+            original_tweet: O tweet original que está sendo compartilhado
+            text: Texto opcional do novo tweet (comentário)
 
-        return share, created
+        Returns:
+            tuple: (novo_tweet ou None, share, created)
+        """
+        share, created = Share.objects.get_or_create(user=user, tweet=original_tweet)
+
+        new_tweet = None
+        if text:
+            new_tweet = Tweet.objects.create(user=user, text=text)
+
+            TweetAssociation.objects.create(
+                parent_tweet=original_tweet,
+                associated_tweet=new_tweet,
+                association_type="share",
+            )
+
+            new_tweet = Tweet.objects.select_related("user").get(id=new_tweet.id)
+
+        return new_tweet, share, created
 
     @staticmethod
     def remove_share(user, tweet):

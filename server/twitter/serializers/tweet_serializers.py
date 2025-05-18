@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from twitter.models import Tweet
+from .bio_serializer import UserBasicSerializer
 
 
 class TweetSerializer(serializers.ModelSerializer):
-    user_nickname = serializers.CharField(source="user.nickname", read_only=True)
+    user = UserBasicSerializer(read_only=True)
     statistics = serializers.SerializerMethodField()
 
     class Meta:
@@ -12,7 +13,6 @@ class TweetSerializer(serializers.ModelSerializer):
             "id",
             "text",
             "user",
-            "user_nickname",
             "created_at",
             "updated_at",
             "statistics",
@@ -23,17 +23,17 @@ class TweetSerializer(serializers.ModelSerializer):
         return obj.get_all_statistics()
 
 
-class TweetInteractionSerializer(serializers.Serializer):
-    tweet_id = serializers.UUIDField(required=True)
+class ReTweetSerializer(serializers.ModelSerializer):
+    text = serializers.CharField(required=True)
+
+    class Meta:
+        model = Tweet
+        fields = ["text"]
 
 
-class ReTweetSerializer(TweetInteractionSerializer):
-    associated_tweets = serializers.ListField(
-        child=serializers.UUIDField(), required=False
-    )
+class ShareSerializer(serializers.ModelSerializer):
+    text = serializers.CharField(required=False, allow_blank=True)
 
-
-class ShareSerializer(TweetInteractionSerializer):
-    associated_tweets = serializers.ListField(
-        child=serializers.UUIDField(), required=False
-    )
+    class Meta:
+        model = Tweet
+        fields = ["text"]

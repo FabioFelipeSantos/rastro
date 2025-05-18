@@ -184,30 +184,52 @@ class TweetViewSet(viewsets.ModelViewSet):
     @standard_response
     def retweet(self, request, pk=None):
         """Endpoint para retweetar"""
-        tweet = TweetService.get_tweet_by_id(pk)
-        if not tweet:
+        original_tweet = TweetService.get_tweet_by_id(pk)
+        if not original_tweet:
             return ApiResponse(message="Tweet não encontrado", status_code=404)
 
         serializer = ReTweetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        associated_tweets = serializer.validated_data.get("associated_tweets")
+        text = serializer.validated_data["text"]
 
-        _, created = TweetService.retweet(
-            user=request.user, tweet=tweet, associated_tweets=associated_tweets
-        )
+        try:
+            new_tweet, _, created = TweetService.retweet(
+                user=request.user, original_tweet=original_tweet, text=text
+            )
 
-        message = (
-            "Tweet retweetado com sucesso"
-            if created
-            else "Você já retweetou este tweet"
-        )
+            if not hasattr(new_tweet, "user") or not new_tweet.user:
+                return ApiResponse(
+                    message="Erro: Relação de usuário não carregada corretamente",
+                    status_code=500,
+                )
 
-        return ApiResponse(
-            data={"tweet_id": str(pk), "statistics": tweet.get_all_statistics()},
-            message=message,
-            status_code=200,
-        )
+            simplified_data = {
+                "id": str(new_tweet.id),
+                "text": new_tweet.text,
+                "user": {
+                    "id": str(new_tweet.user.id),
+                    "nickname": new_tweet.user.nickname,
+                },
+            }
+
+            message = "Tweet retweetado com sucesso"
+
+            return ApiResponse(
+                data={
+                    "original_tweet_id": str(pk),
+                    "new_tweet": simplified_data,
+                    "statistics": original_tweet.get_all_statistics(),
+                },
+                message=message,
+                status_code=201,
+            )
+        except Exception as e:
+            return ApiResponse(
+                message=f"Erro ao processar retweet: {str(e)}",
+                data={"error": str(e)},
+                status_code=500,
+            )
 
     @action(detail=True, methods=["post"])
     @standard_response
@@ -235,27 +257,34 @@ class TweetViewSet(viewsets.ModelViewSet):
     @standard_response
     def share(self, request, pk=None):
         """Endpoint para compartilhar um tweet"""
-        tweet = TweetService.get_tweet_by_id(pk)
-        if not tweet:
+        original_tweet = TweetService.get_tweet_by_id(pk)
+        if not original_tweet:
             return ApiResponse(message="Tweet não encontrado", status_code=404)
 
         serializer = ShareSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        associated_tweets = serializer.validated_data.get("associated_tweets")
+        text = serializer.validated_data.get("text", "")
 
-        _, created = TweetService.share_tweet(
-            user=request.user, tweet=tweet, associated_tweets=associated_tweets
+        new_tweet, _, created = TweetService.share_tweet(
+            user=request.user,
+            original_tweet=original_tweet,
+            text=text if text else None,
         )
 
-        message = (
-            "Tweet compartilhado com sucesso"
-            if created
-            else "Você já compartilhou este tweet"
-        )
+        message = "Tweet compartilhado com sucesso"
+
+        response_data = {
+            "original_tweet_id": str(pk),
+            "statistics": original_tweet.get_all_statistics(),
+        }
+
+        if new_tweet:
+            tweet_serializer = TweetSerializer(new_tweet)
+            response_data["new_tweet"] = tweet_serializer.data
 
         return ApiResponse(
-            data={"tweet_id": str(pk), "statistics": tweet.get_all_statistics()},
+            data=response_data,
             message=message,
             status_code=200,
         )
