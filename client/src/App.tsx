@@ -1,6 +1,12 @@
-function App() {
+import { Users } from "./pages/users";
 
-  return <h1>Twitter</h1>
+function App() {
+  return (
+    <>
+      <h1>Twitter</h1>
+      <Users />
+    </>
+  );
 }
 
 export default App;
