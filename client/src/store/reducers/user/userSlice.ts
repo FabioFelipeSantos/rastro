@@ -11,8 +11,8 @@ const initialState: User = {
   role: "",
   is_active: true,
   is_admin: false,
-  created_at: new Date(),
-  updated_at: new Date(),
+  created_at: new Date().toLocaleString("pt-br"),
+  updated_at: new Date().toLocaleString("pt-br"),
 };
 
 const userSlice = createSlice({
