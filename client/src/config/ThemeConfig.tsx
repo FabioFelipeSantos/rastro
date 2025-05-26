@@ -6,7 +6,7 @@ import { GlobalStyle } from "./GlobalStyle";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setTheme, themeMode } from "../store/reducers/themeSlice";
 
-type BaseTheme = Pick<AppDefaultTheme, "fonts" | "spacing" | "sizing" | "breakpoints">;
+type BaseTheme = Pick<AppDefaultTheme, "fonts" | "spacing" | "sizing" | "breakpoints" | "applyAlpha">;
 
 const calculatingSpacing = (value: number = 1, type: string = "rem") => {
   if (type === "em") {
@@ -29,6 +29,15 @@ const changingBrightness = (value: number) => {
   };
 };
 
+const applyingAlpha = (color: Colors[keyof Colors], alpha: number) => {
+  if (alpha < 0) alpha = 0;
+  if (alpha > 1) alpha = 1;
+
+  const splittedColor = color.split(")");
+
+  return [splittedColor[0], `, ${alpha})`].join("");
+};
+
 const baseTheme: BaseTheme = {
   fonts: {
     main: "Inter, sans-serif",
@@ -40,12 +49,13 @@ const baseTheme: BaseTheme = {
     tablet: "76.8rem",
     desktop: "99.2rem",
   },
+  applyAlpha: applyingAlpha,
 };
 
 const lightTheme: AppDefaultTheme = {
   ...baseTheme,
   colors: {
-    primary: "hsl(204, 88%, 53%)",
+    primary: "hsl(204, 62%, 38%)",
     secondary: "hsl(192, 19%, 95%)",
     background: "hsl(0, 0%, 100%)",
     text: "hsl(210, 25%, 8%)",
@@ -68,14 +78,14 @@ const lightTheme: AppDefaultTheme = {
 const darkTheme: AppDefaultTheme = {
   ...baseTheme,
   colors: {
-    primary: "hsl(204, 88%, 53%)",
+    primary: "hsl(204, 98%, 68%)",
     secondary: "hsl(210, 34%, 13%)",
-    background: "hsl(0, 0%, 0%)",
+    background: "hsl(240, 5%, 7%)",
     text: "hsl(180, 14%, 97%)",
     border: "hsl(206, 7%, 20%)",
     cardBackground: "hsl(210, 34%, 13%)",
     accent: "hsl(204, 88%, 53%)",
-    error: "hsl(356, 91%, 54%",
+    error: "hsl(356, 91%, 54%)",
     success: "hsl(160, 100%, 36%)",
     sidebarBackground: "hsl(0, 0%, 0%)",
     widgetBackground: "hsl(210, 34%, 13%)",

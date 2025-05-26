@@ -1,5 +1,3 @@
-import { type DefaultTheme } from "styled-components";
-
 export type ThemeMode = {
   mode: "light" | "dark";
 };
@@ -23,9 +21,10 @@ export type Colors = {
   icon: string;
 };
 
-export interface AppDefaultTheme extends DefaultTheme {
+export interface AppDefaultTheme {
   colors: Colors;
   changeBrightness: (color: Colors[keyof Colors]) => string;
+  applyAlpha: (color: Colors[keyof Colors], alpha: number) => string;
   fonts: {
     main: string;
   };
