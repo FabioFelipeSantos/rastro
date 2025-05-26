@@ -16,3 +16,9 @@ export type UserResponseLogin = {
   access: string;
   user: Pick<User, "id" | "email" | "nickname" | "is_active">;
 };
+
+export type AuthState = {
+  currentUser?: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+};
