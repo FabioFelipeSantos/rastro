@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 
-from twitter.models import Tweet
+from twitter.models import Tweet, TweetAssociation
 from twitter.serializers.tweet_serializers import (
     TweetSerializer,
     ReTweetSerializer,
@@ -19,6 +19,19 @@ class TweetViewSet(viewsets.ModelViewSet):
     queryset = Tweet.objects.all().order_by("-created_at")
     serializer_class = TweetSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @standard_response
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        user_tweets = self.queryset.filter(user=user)
+
+        result_serializer = self.get_serializer(user_tweets, many=True)
+
+        return ApiResponse(
+            data=result_serializer.data,
+            message=f"Tweets do usuário {user.nickname} resgatados com sucesso",
+            status_code=200,
+        )
 
     @standard_response
     def create(self, request, *args, **kwargs):
@@ -228,6 +241,51 @@ class TweetViewSet(viewsets.ModelViewSet):
             return ApiResponse(
                 message=f"Erro ao processar retweet: {str(e)}",
                 data={"error": str(e)},
+                status_code=500,
+            )
+
+    @action(detail=True, methods=["get"], url_path="associated-tweets")
+    @standard_response
+    def associated_tweets(self, request, pk=None):
+        try:
+            type = "retweet"
+            query_params = request.query_params
+
+            if len(query_params) > 0:
+                if len(query_params) > 1:
+                    return ApiResponse(
+                        message="O único parâmetro de pesquisa permitido é 'type'",
+                        status_code=400,
+                    )
+
+                type = next(query_params.values())
+                if type not in ["retweet", "share"]:
+                    return ApiResponse(
+                        message="Os únicos valores para a pesquisa são retweet ou share",
+                        status_code=400,
+                    )
+
+            retweet_info = (
+                TweetAssociation.objects.filter(
+                    parent_tweet_id=pk, association_type=type
+                )
+                .select_related("associated_tweet")
+                .order_by("-created_at")
+            )
+
+            retweets = []
+            for tweet in retweet_info:
+                retweets.append(tweet.associated_tweet)
+
+            serializer = self.get_serializer(retweets, many=True)
+
+            return ApiResponse(
+                data=serializer.data, message="Tweets recuperados", status_code=200
+            )
+        except Exception as Error:
+            return ApiResponse(
+                message=f"Erro ao processar os tweets associados: {str(Error)}",
+                data={"error": str(Error)},
                 status_code=500,
             )
 
