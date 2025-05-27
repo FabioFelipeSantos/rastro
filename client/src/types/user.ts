@@ -1,3 +1,12 @@
+export type UserCreate = {
+  first_name: string;
+  last_name: string | null;
+  nickname: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
 export type User = {
   id: string;
   first_name: string;
@@ -9,6 +18,11 @@ export type User = {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type UserLogin = {
+  nickname_or_email: string;
+  password: string;
 };
 
 export type UserResponseLogin = {

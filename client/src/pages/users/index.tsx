@@ -1,41 +1,63 @@
-import { Person } from "@mui/icons-material";
+import { useEffect, type ReactNode } from "react";
+import { CircleLoader } from "react-spinners";
 
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { themeMode, toggleTheme } from "../../store/reducers/themeSlice";
-
-import { Button } from "../../components/Button";
-import { IconButton } from "../../components/IconButton";
-import { Input } from "../../components/form/Input";
-import { TextArea } from "../../components/form/TextArea";
+import { useGetTweetsQuery } from "../../services/tweetApiSlice";
+import { useAppDispatch } from "../../store/hooks";
+import { setTweets } from "../../store/reducers/tweetSlice";
 
 export const Users = () => {
-  const theme = useAppSelector(themeMode);
+  const token = localStorage.getItem("token") as string;
+  const { data: tweets, isSuccess, isLoading, isError } = useGetTweetsQuery(token);
   const dispatch = useAppDispatch();
 
-  const handlingClick = () => {
-    dispatch(toggleTheme());
-  };
+  useEffect(() => {
+    if (isSuccess) {
+      dispatch(setTweets(tweets));
+    }
+  }, [tweets, isSuccess, dispatch]);
 
+  let content: ReactNode;
+
+  if (isLoading) {
+    content = (
+      <CircleLoader
+        size={80}
+        color="#42f"
+      />
+    );
+  }
+
+  if (isError) {
+    content = <h2>Deu erro na requisição dos tweets</h2>;
+  }
+
+  if (isSuccess) {
+    content = tweets.map((tweet) => (
+      <div key={tweet.id}>
+        <div>
+          <h3>{tweet.user.nickname}</h3>
+          <span>{tweet.user.email}</span>
+        </div>
+        <p>{tweet.text}</p>
+      </div>
+    ));
+  }
   return (
     <>
       <h1>Users</h1>
-      <Button
-        text={theme === "light" ? "Mudar para escuro" : "Mudar para Claro"}
-        onClick={handlingClick}
-      />
-      <IconButton>
-        <Person />
-      </IconButton>
-
-      <label>
-        <h3>Input</h3>
-        <Input placeholder="Algum Input Maroto" />
-      </label>
-
-      <label>
-        <h3>TextArea</h3>
-        <TextArea placeholder="Text Area" />
-      </label>
+      {content}
     </>
   );
 };
+
+// let content: ReactNode;
+// if (isLoading) {
+//   content = (
+//     <CircleLoader
+//       color="#24711d"
+//       loading
+//       size={85}
+//       speedMultiplier={1}
+//     />
+//   );
+// }

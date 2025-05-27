@@ -1,19 +1,23 @@
-import { configureStore, type ThunkAction, type Action } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 
 import userReducer from "./reducers/user/userSlice";
 import themeReducer from "./reducers/themeSlice";
 import authReducer from "./reducers/user/authSlice";
+import tweetReducer from "./reducers/tweetSlice";
+import { apiSlice } from "../services/apiSlice";
 
 const store = configureStore({
   reducer: {
     user: userReducer,
     theme: themeReducer,
     auth: authReducer,
+    tweet: tweetReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
 });
 
 export default store;
 
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
-export type AppThunk = ThunkAction<void, RootState, unknown, Action>;
