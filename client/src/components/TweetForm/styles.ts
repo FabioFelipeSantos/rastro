@@ -5,3 +5,21 @@ export const TweetFormContainer = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
 `;
+
+export const AvatarImageSmall = styled.img`
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: ${({ theme }) => theme.spacing(1.5)};
+`;
+
+export const FormContent = styled.div`
+  flex-grow: 1;
+`;
+
+export const FormActions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: ${({ theme }) => theme.spacing(1.5)};
+`;
