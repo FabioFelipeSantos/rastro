@@ -1,29 +1,36 @@
-import type { Tweet, TweetCreate } from "../types/tweet";
+import type { TweetCreate } from "../types/tweet";
 import { apiSlice } from "./apiSlice";
-import type { TweetListResponse } from "./types/tweet";
+import type { TweetListResponse, TweetResponse, TweetStatisticsResponse } from "./types/tweet";
+import { getHeader } from "../utils/getHeader";
 
 export const tweetApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getTweets: builder.query<Tweet[], string>({
+    getTweets: builder.query<TweetListResponse, string>({
       query: (token: string) => ({
         url: "/tweets",
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getHeader(token),
       }),
-      transformResponse(res: TweetListResponse) {
-        return res.data;
-      },
     }),
-    addTweet: builder.mutation<Tweet, TweetCreate>({
-      query: (newTweet) => ({
+    addTweet: builder.mutation<TweetResponse, { newTweet: TweetCreate; token: string }>({
+      query: ({ newTweet, token }) => ({
         url: "/tweets/",
         method: "POST",
-        // header''
+        headers: getHeader(token),
+        body: newTweet,
+      }),
+    }),
+    sendATweetAction: builder.mutation<
+      TweetStatisticsResponse,
+      { token: string; action: "like" | "dislike" | "share" | "retweet" }
+    >({
+      query: ({ token, action }) => ({
+        url: `/tweets/${action}/`,
+        method: "POST",
+        headers: getHeader(token),
       }),
     }),
   }),
 });
 
-export const { useGetTweetsQuery } = tweetApiSlice;
+export const { useGetTweetsQuery, useAddTweetMutation, useSendATweetActionMutation } = tweetApiSlice;

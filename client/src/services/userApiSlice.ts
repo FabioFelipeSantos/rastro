@@ -1,38 +1,28 @@
-import type { User, UserCreate, UserLogin } from "../types/user";
+import type { UserCreate, UserLogin } from "../types/user";
 import { apiSlice } from "./apiSlice";
 import { type UserListResponse, type UserLoginServerResponse, type UserResponse } from "./types/user";
+import { getHeader } from "../utils/getHeader";
 
 export const userApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getUsers: builder.query<User[], void>({
+    getUsers: builder.query<UserListResponse, void>({
       query: () => "/users/",
-      transformResponse(res: UserListResponse) {
-        return res.data;
-      },
     }),
-    getLoggedUser: builder.query<User, string>({
+    getLoggedUser: builder.query<UserResponse, string>({
       query: (token) => ({
         url: "/users/me/",
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getHeader(token),
       }),
-      transformResponse(res: UserResponse) {
-        return res.data;
-      },
     }),
-    addNewUser: builder.mutation<User, UserCreate>({
+    addNewUser: builder.mutation<UserResponse, UserCreate>({
       query: (newUser) => ({
         url: "/users/",
         method: "POST",
         body: newUser,
       }),
-      transformResponse(res: UserResponse) {
-        return res.data;
-      },
     }),
-    userLogin: builder.mutation<string, UserLogin>({
+    userLogin: builder.mutation<UserLoginServerResponse, UserLogin>({
       query: (user) => ({
         url: "/auth/login/",
         method: "POST",
@@ -41,11 +31,10 @@ export const userApiSlice = apiSlice.injectEndpoints({
           password: user.password,
         },
       }),
-      transformResponse(res: UserLoginServerResponse) {
-        return res.data.access;
-      },
     }),
   }),
 });
 
 export const { useGetUsersQuery, useAddNewUserMutation, useUserLoginMutation, useGetLoggedUserQuery } = userApiSlice;
+
+export type AA = ReturnType<typeof useGetUsersQuery>;
