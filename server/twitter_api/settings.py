@@ -186,5 +186,5 @@ if not DEBUG:
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 else:
     MEDIA_URL = "/uploads/"
-    MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
+    MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024

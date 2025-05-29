@@ -24,7 +24,7 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes = [permissions.AllowAny]
         elif self.action == "list":
             permission_classes = []
-           # permission_classes = [permissions.IsAuthenticated, IsAdmin]
+            # permission_classes = [permissions.IsAuthenticated, IsAdmin]
         elif self.action in ["update", "partial_update", "destroy"]:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
         else:

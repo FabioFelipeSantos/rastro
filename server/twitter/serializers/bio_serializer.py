@@ -6,8 +6,8 @@ from .avatar_serializer import AvatarSerializer
 class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "nickname", "first_name", "last_name", "email"]
-        read_only_fields = ["id", "nickname", "first_name", "last_name", "email"]
+        fields = ["id", "first_name", "last_name"]
+        read_only_fields = ["id", "first_name", "last_name"]
 
 
 class BioSerializer(serializers.ModelSerializer):
