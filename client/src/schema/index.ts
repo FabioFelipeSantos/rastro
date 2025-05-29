@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { passwordValidation } from "../../utils/passwordValidation";
+import { passwordValidation } from "../utils/passwordValidation";
 
 export const schema = z.object({
   username_or_email: z.string().min(1, "O nickname ou email é obrigatório").or(z.string().email("O email não é válido")),
