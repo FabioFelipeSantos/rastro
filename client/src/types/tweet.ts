@@ -19,3 +19,8 @@ export type Tweet = {
   created_at: string;
   updated_at: string;
 };
+
+export type TweetStatisticsFromServer = {
+  tweet_id: Tweet["id"];
+  statistics: TweetStatistics;
+};
