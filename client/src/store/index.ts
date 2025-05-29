@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import userReducer from "./reducers/user/userSlice";
+import userBioReducer from "./reducers/user/bioSlice";
 import themeReducer from "./reducers/themeSlice";
 import authReducer from "./reducers/user/authSlice";
 import tweetReducer from "./reducers/tweetSlice";
@@ -9,6 +10,7 @@ import { apiSlice } from "../services/apiSlice";
 const store = configureStore({
   reducer: {
     user: userReducer,
+    userBio: userBioReducer,
     theme: themeReducer,
     auth: authReducer,
     tweet: tweetReducer,
