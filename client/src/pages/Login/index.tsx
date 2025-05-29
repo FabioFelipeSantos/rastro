@@ -1,18 +1,17 @@
-// import { type ReactNode } from "react";
 import { useForm } from "react-hook-form";
-// import { CircleLoader } from "react-spinners";
 
-import { useUserLoginMutation, userApiSlice } from "../../services/userApiSlice";
+import { useUserLoginMutation } from "../../services/userApiSlice";
+// import { userBioApiSlice } from "../../services/userBioApiSlice";
 import { useAppDispatch } from "../../store/hooks";
 import { login } from "../../store/reducers/user/authSlice";
-import { setUser } from "../../store/reducers/user/userSlice";
-// import { login } from "../../store/reducers/user/authSlice";
+// import { setUser } from "../../store/reducers/user/userSlice";
+// import { setBio } from "../../store/reducers/user/bioSlice";
 
 import { Input } from "../../components/form/Input";
 import { Button } from "../../components/Button";
 import type { UserLogin } from "../../types/user";
 
-export const Users = () => {
+export const Login = () => {
   const { register, handleSubmit, getValues } = useForm({
     mode: "all",
   });
@@ -24,26 +23,32 @@ export const Users = () => {
     const loginInfo = getValues() as UserLogin;
 
     try {
-      const token = await userLogin({
+      const result = await userLogin({
         nickname_or_email: loginInfo.nickname_or_email,
         password: loginInfo.password,
       }).unwrap();
-      console.log(token);
+
+      if (!result.data) {
+        throw new Error(result.message);
+      }
+
+      const { access: token } = result.data;
+
       localStorage.setItem("token", token);
 
-      const user = await dispatch(userApiSlice.endpoints.getLoggedUser.initiate(token)).unwrap();
+      // const user = await dispatch(userApiSlice.endpoints.getLoggedUser.initiate(token)).unwrap();
+      // const userBio = await dispatch(userBioApiSlice.endpoints.getUserBio.initiate(token)).unwrap();
 
-      dispatch(login(user));
-      dispatch(setUser(user));
-      console.log(user);
+      dispatch(login(token));
+      // dispatch(setUser(user));
+      // dispatch(setBio(userBio));
     } catch (e) {
       console.log(e);
     }
   };
   return (
     <>
-      <h1>Users</h1>
-      <h2>Login</h2>
+      <h3>Login</h3>
       <form onSubmit={handleSubmit(handleLogIn)}>
         <label>
           <h3>Nickname ou Email</h3>
