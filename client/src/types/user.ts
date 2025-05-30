@@ -35,7 +35,7 @@ export type UserBioAvatar = {
   city: string;
   state: string;
   country: string;
-  avatar: UserAvatar | { file_path: UserAvatar["file_path"] };
+  avatar: UserAvatar | { file_path: UserAvatar["file_path"] } | null;
   user: Pick<User, "id" | "first_name" | "last_name">;
   created_at: string;
   updated_at: string;
