@@ -25,7 +25,16 @@ const bioSlice = createSlice({
   initialState,
   reducers: {
     setBio: (_, action: PayloadAction<UserBioAvatar>) => {
-      return action.payload;
+      let avatar = action.payload.avatar;
+
+      if (!avatar) {
+        avatar = { file_path: avatarPath(action.payload.user.first_name, action.payload.user.last_name) };
+      }
+
+      return {
+        ...action.payload,
+        avatar,
+      };
     },
     deleteAvatar: (state) => {
       state.avatar = {
