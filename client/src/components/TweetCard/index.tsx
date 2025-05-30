@@ -24,7 +24,7 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet }) => {
 
   const dispatch = useAppDispatch();
   const userBio = useAppSelector(getBio);
-  const [sendTweetAction, { isError }] = useSendATweetActionMutation();
+  const [sendTweetAction, { isLoading }] = useSendATweetActionMutation();
 
   const timeAgo = (tweetDate: string) => {
     const now = new Date();
@@ -41,10 +41,6 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet }) => {
 
   const handleTweetAction = async (action: "like" | "dislike" | "retweet" | "share") => {
     const tweetActionStatistics = await sendTweetAction({ token, action }).unwrap();
-
-    if (isError) {
-      throw new Error(error.message);
-    }
   };
 
   return (
@@ -65,7 +61,7 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet }) => {
         <S.TweetBody>{tweet.text}</S.TweetBody>
 
         <S.TweetActions>
-          <S.ActionButton>
+          <S.ActionButton disabled={isLoading}>
             <ReplyAll />
             {tweet.statistics.re_tweets}
           </S.ActionButton>
