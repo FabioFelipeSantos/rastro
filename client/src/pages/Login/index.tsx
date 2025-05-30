@@ -1,50 +1,67 @@
 import { useForm } from "react-hook-form";
 
-import { useUserLoginMutation } from "../../services/userApiSlice";
-// import { userBioApiSlice } from "../../services/userBioApiSlice";
+import { executeQuery, executeMutation } from "../../utils/ApiResponse";
+import { useUserLoginMutation, userApiSlice } from "../../services/userApiSlice";
+import { userBioApiSlice } from "../../services/userBioApiSlice";
 import { useAppDispatch } from "../../store/hooks";
 import { login } from "../../store/reducers/user/authSlice";
-// import { setUser } from "../../store/reducers/user/userSlice";
-// import { setBio } from "../../store/reducers/user/bioSlice";
+import { setUser } from "../../store/reducers/user/userSlice";
+import { setBio } from "../../store/reducers/user/bioSlice";
 
 import { Input } from "../../components/form/Input";
 import { Button } from "../../components/Button";
-import type { UserLogin } from "../../types/user";
+import type { UserLogin, UserResponseLogin } from "../../types/user";
+import { useState } from "react";
+import { openModal } from "../../store/reducers/modalSlice";
 
 export const Login = () => {
+  const [isSendingLogin, setIsSendingLogin] = useState<boolean>(false);
+  // const [isErrorModal, setIsErrorModal] = useState<boolean>(false);
+
   const { register, handleSubmit, getValues } = useForm({
     mode: "all",
   });
-  const [userLogin, { isLoading }] = useUserLoginMutation();
+  const [sendUserLogin] = useUserLoginMutation();
 
   const dispatch = useAppDispatch();
 
   const handleLogIn = async () => {
+    setIsSendingLogin(true);
     const loginInfo = getValues() as UserLogin;
 
     try {
-      const result = await userLogin({
+      const { access: token } = await executeMutation<UserResponseLogin, UserLogin>(sendUserLogin, {
         nickname_or_email: loginInfo.nickname_or_email,
         password: loginInfo.password,
-      }).unwrap();
-
-      if (!result.data) {
-        throw new Error(result.message);
-      }
-
-      const { access: token } = result.data;
-
+      });
       localStorage.setItem("token", token);
 
-      // const user = await dispatch(userApiSlice.endpoints.getLoggedUser.initiate(token)).unwrap();
-      // const userBio = await dispatch(userBioApiSlice.endpoints.getUserBio.initiate(token)).unwrap();
+      const resultGetUser = await dispatch(userApiSlice.endpoints.getLoggedUser.initiate(token));
+      const user = executeQuery(resultGetUser);
+      const resultGetUserBio = await dispatch(userBioApiSlice.endpoints.getUserBio.initiate(token));
+      const userBio = executeQuery(resultGetUserBio);
 
       dispatch(login(token));
-      // dispatch(setUser(user));
-      // dispatch(setBio(userBio));
+      dispatch(setUser(user));
+      dispatch(setBio(userBio[0]));
     } catch (e) {
-      console.log(e);
+      if (e instanceof Error) {
+        dispatch(
+          openModal({
+            title: "Erro no Login",
+            content: e.message,
+          }),
+        );
+      } else {
+        dispatch(
+          openModal({
+            title: "Erro desconhecido no servidor ou no login",
+            content: "Nos procure por mais informações e nos conte em detalhes o que está ocorrendo",
+          }),
+        );
+      }
     }
+    setIsSendingLogin(false);
   };
   return (
     <>
@@ -65,13 +82,13 @@ export const Login = () => {
             {...register("password", {
               required: { value: true, message: "O password deve ser informado para o login" },
             })}
-            value="1.aA+/*"
+            // value="1.aA+/*"
           />
         </label>
         <Button
           text="Login"
           type="submit"
-          disabled={isLoading}
+          disabled={isSendingLogin}
         />
       </form>
     </>

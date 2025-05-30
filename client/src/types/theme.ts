@@ -12,6 +12,7 @@ export type Colors = {
   accent: string;
   error: string;
   success: string;
+  modalBackground: string;
   sidebarBackground: string;
   widgetBackground: string;
   hoverBackground: string;
