@@ -15,6 +15,8 @@ const initialState: UserBioAvatar = {
     id: "",
     first_name: "",
     last_name: "",
+    following_count: 0,
+    follower_count: 0,
   },
   created_at: "",
   updated_at: "",
@@ -25,21 +27,28 @@ const bioSlice = createSlice({
   initialState,
   reducers: {
     setBio: (_, action: PayloadAction<UserBioAvatar>) => {
-      let avatar = action.payload.avatar;
+      const payload = action.payload;
 
-      if (!avatar) {
-        avatar = { file_path: avatarPath(action.payload.user.first_name, action.payload.user.last_name) };
+      if (!payload.avatar || !payload.avatar.file_path || payload.avatar.file_path.trim() === "") {
+        return {
+          ...payload,
+          avatar: {
+            file_path: avatarPath(payload.user.first_name, payload.user.last_name),
+          },
+        };
       }
 
-      return {
-        ...action.payload,
-        avatar,
-      };
+      return payload;
     },
+
     deleteAvatar: (state) => {
       state.avatar = {
         file_path: avatarPath(state.user.first_name, state.user.last_name),
       };
+    },
+
+    loggingOutUserBio: () => {
+      return initialState;
     },
   },
   selectors: {
@@ -48,6 +57,6 @@ const bioSlice = createSlice({
   },
 });
 
-export const { setBio, deleteAvatar } = bioSlice.actions;
+export const { setBio, deleteAvatar, loggingOutUserBio } = bioSlice.actions;
 export const { getBio, getAvatar } = bioSlice.selectors;
 export default bioSlice.reducer;

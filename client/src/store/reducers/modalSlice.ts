@@ -21,8 +21,8 @@ const modalSlice = createSlice({
       state.content = action.payload.content;
       state.isOpen = true;
     },
-    closeModal: (state) => {
-      state.isOpen = false;
+    closeModal: () => {
+      return initialState;
     },
   },
   selectors: {
