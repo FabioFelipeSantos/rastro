@@ -143,3 +143,28 @@ class TweetService:
             return True
         except Share.DoesNotExist:
             return False
+
+    @staticmethod
+    def verifying_reaction_by_user(user, tweet):
+        like = Like.objects.filter(user=user, tweet=tweet)
+        dislike = Dislike.objects.filter(user=user, tweet=tweet)
+        retweet = Re_Tweet.objects.filter(user=user, tweet=tweet)
+        share = Share.objects.filter(user=user, tweet=tweet)
+
+        reactions = {
+            "like": False,
+            "dislike": False,
+            "retweet": False,
+            "share": False,
+        }
+
+        if like:
+            reactions["like"] = True
+        if dislike:
+            reactions["dislike"] = True
+        if retweet:
+            reactions["retweet"] = True
+        if share:
+            reactions["share"] = True
+
+        return reactions
