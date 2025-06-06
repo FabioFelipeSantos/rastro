@@ -15,11 +15,20 @@ export const AvatarImageSmall = styled.img`
 
 export const FormContent = styled.div`
   flex-grow: 1;
+
+  & > form {
+    display: flex;
+
+    .text-area-container {
+      width: 90%;
+    }
+  }
 `;
 
 export const FormActions = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: end;
   margin-top: ${({ theme }) => theme.spacing(1.5)};
+  width: 10%;
 `;

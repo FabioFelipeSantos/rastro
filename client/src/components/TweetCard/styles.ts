@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
-export const TweetCardContainer = styled.article`
-  padding: ${({ theme }) => theme.spacing(1.2)} ${({ theme }) => theme.spacing(1.6)};
+export const TweetCardContainer = styled.article<{ $isRetweet?: boolean }>`
+  padding: ${({ theme, $isRetweet }) =>
+    $isRetweet ? `${theme.spacing(0.8)} ${theme.spacing(1.2)}` : `${theme.spacing(1.2)} ${theme.spacing(1.6)}`};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
   transition: background-color 0.2s ease;
+  font-size: ${({ $isRetweet, theme }) => ($isRetweet ? theme.sizing(0.9) : "inherit")};
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.hoverBackground};
@@ -15,52 +17,84 @@ export const TweetContent = styled.div`
   flex-grow: 1;
 `;
 
-export const TweetHeader = styled.div`
+export const TweetHeader = styled.div<{ $isRetweet?: boolean }>`
   display: flex;
   align-items: center;
   margin-bottom: ${({ theme }) => theme.spacing(0.4)};
 
   strong {
     margin-right: ${({ theme }) => theme.spacing(0.4)};
+    font-size: ${({ $isRetweet, theme }) => ($isRetweet ? theme.sizing(1.4) : "inherit")};
   }
   span {
+    margin-left: ${({ theme }) => theme.spacing(0.6)};
     color: ${({ theme }) => theme.colors.icon};
-    font-size: ${({ theme }) => theme.sizing(1.4)};
+    font-size: ${({ $isRetweet, theme }) => ($isRetweet ? theme.sizing(1.3) : theme.sizing(1.4))};
   }
 `;
 
-export const TweetBody = styled.p`
+export const TweetBody = styled.p<{ $isRetweet?: boolean }>`
   margin: 0 0 ${({ theme }) => theme.spacing(1.2)} 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  font-size: ${({ $isRetweet, theme }) => ($isRetweet ? theme.sizing(1.2) : "inherit")};
 `;
 
-export const TweetActions = styled.div`
+export const TweetActions = styled.div<{ $isRetweet?: boolean }>`
   display: flex;
   justify-content: space-between;
   color: ${({ theme }) => theme.colors.icon};
-  max-width: ${({ theme }) => theme.spacing(42.5)};
+  width: 60%;
+
+  @media screen and (max-width: ${({ theme }) => theme.breakpoints.desktop}) {
+    width: 70%;
+  }
+  @media screen and (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    width: 80%;
+  }
+  @media screen and (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    width: 96%;
+  }
 `;
 
-export const ActionButton = styled.button`
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
+type ActionButtonProps = {
+  $isReacted: boolean;
+  $isRetweetButton?: boolean;
+  $hasExpanded?: boolean;
+};
+
+export const ActionButton = styled.button<ActionButtonProps>`
   display: flex;
   align-items: center;
-  font-size: ${({ theme }) => theme.sizing(1.36)};
-  padding: ${({ theme }) => theme.spacing(1.2)};
-  border-radius: ${({ theme }) => theme.spacing(1.2)};
+  gap: 4px;
+  background: none;
+  border: none;
+  color: ${({ theme, $isReacted, $isRetweetButton, $hasExpanded }) => {
+    if ($isRetweetButton && $hasExpanded) {
+      return theme.colors.primary;
+    }
 
-  svg {
-    margin-right: ${({ theme }) => theme.spacing(1.2)};
-    width: ${({ theme }) => theme.spacing(1.8)};
-    height: ${({ theme }) => theme.spacing(1.8)};
-  }
+    return $isReacted ? theme.colors.primary : theme.colors.text;
+  }};
+  cursor: ${({ disabled }) => (disabled ? "default" : "pointer")};
+  opacity: ${({ disabled }) => (disabled ? 0.7 : 1)};
+  font-size: 14px;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.primary};
-    background-color: ${({ theme }) => theme.applyAlpha(theme.colors.primary, 0.2)};
+    color: ${({ theme }) => theme.applyAlpha(theme.colors.primary, 0.75)};
   }
+
+  .icon {
+    font-size: 18px;
+    transform: ${({ $isReacted, $hasExpanded }) => ($isReacted || $hasExpanded ? "scale(1.2)" : "scale(1)")};
+    transition: transform 0.2s ease;
+  }
+`;
+
+export const RetweetExpandContainer = styled.div`
+  margin-top: 8px;
 `;

@@ -8,14 +8,33 @@ import { tweetFormSchema, type TTweetForm, defaultTweetForm } from "../../schema
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { tokenFromState } from "../../store/reducers/user/authSlice";
 import { addTweet } from "../../store/reducers/tweetSlice";
-import { useAddTweetMutation } from "../../services/tweetApiSlice";
+import { useAddRetweetMutation, useAddTweetMutation } from "../../services/tweetApiSlice";
 import { getBio } from "../../store/reducers/user/bioSlice";
 import { TextArea } from "../form/TextArea";
 import { ErrorMessage } from "../form/ErrorMessage";
 import { IconButton } from "../IconButton";
 import { getImageUrl } from "../../utils/getImageUrl";
+import { executeMutation } from "../../utils/apiResponse";
+import { openModal } from "../../store/reducers/modalSlice";
+import { useNavigate } from "react-router-dom";
+import { avatarPath } from "../../utils/getAvatarUrlPath";
+import type { Tweet } from "../../types/tweet";
 
-export const TweetForm: FC = () => {
+type TweetFormProps = {
+  parentTweetId?: number;
+  onSubmitSuccess?: (tweet: Tweet) => void;
+  isSubmitting?: boolean;
+  setIsSubmitting?: (isSubmitting: boolean) => void;
+  placeholder?: string;
+};
+
+export const TweetForm: FC<TweetFormProps> = ({
+  parentTweetId,
+  onSubmitSuccess,
+  isSubmitting = false,
+  setIsSubmitting,
+  placeholder = "O que está acontecendo?!",
+}) => {
   const {
     register,
     handleSubmit,
@@ -26,52 +45,122 @@ export const TweetForm: FC = () => {
     defaultValues: defaultTweetForm,
   });
 
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const token = useAppSelector(tokenFromState);
+  const [addReTweet] = useAddRetweetMutation();
   const [addTweetToServer] = useAddTweetMutation();
   const userBio = useAppSelector(getBio);
 
   const onSubmit: SubmitHandler<TTweetForm> = async (data) => {
     if (!token) {
-      // TODO: Trocar para Modal
-      alert("Faça o Login");
+      dispatch(
+        openModal({
+          title: "Login",
+          content: "Usuário não logado. Faça o login",
+        }),
+      );
+      navigate("/login");
       return;
+    }
+
+    if (setIsSubmitting) {
+      setIsSubmitting(true);
     }
 
     try {
       const newTweetText = data.text.trim();
-      const newTweet = await addTweetToServer({ newTweet: { text: newTweetText }, token: token }).unwrap();
-      dispatch(addTweet(newTweet));
+
+      const payload = {
+        newTweet: {
+          text: newTweetText,
+        },
+        token: token,
+      };
+
+      let newTweet: Tweet;
+      if (!parentTweetId) {
+        newTweet = await executeMutation(addTweetToServer, payload);
+      } else {
+        const retweetPayload = {
+          ...payload,
+          tweetId: parentTweetId,
+        };
+        newTweet = await executeMutation(addReTweet, retweetPayload);
+      }
+
+      if (!parentTweetId) {
+        dispatch(addTweet(newTweet));
+      }
+
+      if (onSubmitSuccess) {
+        onSubmitSuccess(newTweet);
+      }
+
       reset();
     } catch (error) {
-      // TODO: Trocar para Modal
-      alert(`Algum erro: ${error}`);
-      return;
+      if (error instanceof Error) {
+        dispatch(
+          openModal({
+            title: "Erro na criação",
+            content: `Algum erro na criação do tweet. ${error.message}`,
+          }),
+        );
+      } else {
+        dispatch(
+          openModal({
+            title: "Erro desconhecido",
+            content: "Algum erro desconhecido. Entre em contato conosco",
+          }),
+        );
+      }
+    } finally {
+      if (setIsSubmitting) {
+        setIsSubmitting(false);
+      }
     }
   };
 
+  const formContainerStyle = parentTweetId
+    ? {
+        borderBottom: "none",
+        paddingTop: "8px",
+        paddingBottom: "8px",
+      }
+    : {};
+
   return (
-    <S.TweetFormContainer>
-      {userBio.avatar.file_path && (
+    <S.TweetFormContainer style={formContainerStyle}>
+      {!parentTweetId && (
         <S.AvatarImageSmall
-          src={getImageUrl(userBio.avatar.file_path)}
-          alt={`Avatar do usuário ${userBio.user.first_name} ${userBio.user.last_name || ""}`}
+          onClick={() => navigate(`/main/profile/${userBio?.user?.id || ""}`)}
+          src={
+            userBio?.avatar?.file_path
+              ? getImageUrl(userBio.avatar.file_path)
+              : avatarPath(userBio?.user?.first_name || "U", userBio?.user?.last_name)
+          }
+          alt={`Avatar do usuário ${userBio?.user?.first_name || ""} ${userBio?.user?.last_name || ""}`}
         />
       )}
 
       <S.FormContent>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <TextArea
-            placeholder="O que está acontecendo?!"
-            {...register("text")}
-          />
+          <div className="text-area-container">
+            <TextArea
+              isFromParent={!!parentTweetId}
+              placeholder={placeholder}
+              {...register("text")}
+              disabled={isSubmitting}
+            />
 
-          {errors.text && <ErrorMessage text={errors.text.message!} />}
+            {errors.text && <ErrorMessage text={errors.text.message!} />}
+          </div>
 
           <S.FormActions>
-            {/* TODO: tenho que fazer os ícones de like, dislike, share e retweet */}
-            {/* <div>Ícones de like, etc</div> */}
-            <IconButton type="submit">
+            <IconButton
+              type="submit"
+              disabled={isSubmitting}
+            >
               <Send />
             </IconButton>
           </S.FormActions>
