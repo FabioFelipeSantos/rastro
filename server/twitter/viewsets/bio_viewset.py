@@ -17,6 +17,7 @@ class BioViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retorna a bio do usuário autenticado"""
+
         return Bio.objects.filter(user=self.request.user)
 
     @standard_response
