@@ -84,3 +84,11 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     @property
     def is_admin(self):
         return self.role == "admin"
+
+    @property
+    def following_count(self):
+        return self.following.count()
+
+    @property
+    def follower_count(self):
+        return self.followers.count()

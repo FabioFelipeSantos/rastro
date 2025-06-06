@@ -44,3 +44,6 @@ class Tweet(BaseModel):
             "dislikes": self.get_statistics("dislikes"),
             "shares": self.get_statistics("shares"),
         }
+
+    def get_if_is_associated(self) -> bool:
+        return getattr(self, "child_associations").count() > 0

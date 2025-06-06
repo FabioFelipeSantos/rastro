@@ -4,10 +4,34 @@ from .avatar_serializer import AvatarSerializer
 
 
 class UserBasicSerializer(serializers.ModelSerializer):
+    following_count = User.following_count
+    follower_count = User.follower_count
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "nickname", "first_name", "last_name", "email"]
-        read_only_fields = ["id", "nickname", "first_name", "last_name", "email"]
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "nickname",
+            "following_count",
+            "follower_count",
+            "avatar_url",
+        ]
+        read_only_fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "nickname",
+            "following_count",
+            "follower_count",
+            "avatar_url",
+        ]
+
+    def get_avatar_url(self, obj):
+        if hasattr(obj, "bio") and hasattr(obj.bio, "avatar") and obj.bio.avatar:
+            return obj.bio.avatar.file_path
 
 
 class BioSerializer(serializers.ModelSerializer):

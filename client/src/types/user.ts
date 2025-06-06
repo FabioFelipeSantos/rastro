@@ -1,3 +1,14 @@
+import type { Tweet } from "./tweet";
+
+export type UserCreate = {
+  first_name: string;
+  last_name: string | null;
+  nickname: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
 export type User = {
   id: string;
   first_name: string;
@@ -11,6 +22,32 @@ export type User = {
   updated_at: string;
 };
 
+export type UserAvatar = {
+  id: number;
+  file_name: string;
+  file_saved_name: string;
+  file_path: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserBioAvatar = {
+  id: number;
+  text: string;
+  city: string;
+  state: string;
+  country: string;
+  avatar: UserAvatar | { file_path: UserAvatar["file_path"] } | null;
+  user: Pick<User, "id" | "first_name" | "last_name"> & { following_count: number; follower_count: number };
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserLogin = {
+  nickname_or_email: string;
+  password: string;
+};
+
 export type UserResponseLogin = {
   refresh: string;
   access: string;
@@ -18,7 +55,13 @@ export type UserResponseLogin = {
 };
 
 export type AuthState = {
-  currentUser?: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
+};
+
+export type UserProfile = {
+  user: User;
+  bio: UserBioAvatar;
+  tweets: Tweet[];
 };

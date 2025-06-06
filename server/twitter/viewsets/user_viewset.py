@@ -2,8 +2,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from twitter.models import User
-from twitter.serializers import UserSerializer
+from twitter.models import User, Bio, Tweet
+from twitter.serializers import UserSerializer, BioSerializer, TweetSerializer
 from twitter.services import UserService
 from twitter.response import ApiResponse, standard_response
 from twitter.permissions import IsAdmin, IsOwnerOrAdmin
@@ -23,7 +23,8 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ["create"]:
             permission_classes = [permissions.AllowAny]
         elif self.action == "list":
-            permission_classes = [permissions.IsAuthenticated, IsAdmin]
+            permission_classes = []
+            # permission_classes = [permissions.IsAuthenticated, IsAdmin]
         elif self.action in ["update", "partial_update", "destroy"]:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
         else:
@@ -138,6 +139,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(error_data, status=400)
 
             serializer.save()
+            Bio.objects.create(user_id=serializer.data["id"], text="")
 
             return ApiResponse(
                 data=serializer.data,
@@ -306,3 +308,24 @@ class UserViewSet(viewsets.ModelViewSet):
                 message="Erro ao processar a solicitação",
                 status_code=500,
             )
+
+    @action(detail=True, methods=["get"], url_path="profile")
+    @standard_response
+    def get_profile_for_not_logged_user(self, request, pk=None):
+        user = User.objects.get(id=pk)
+        bio = Bio.objects.get(user_id=pk)
+        tweets = Tweet.objects.filter(user_id=pk)
+
+        userSerializer = UserSerializer(user)
+        bioSerializer = BioSerializer(bio)
+        tweetSerializer = TweetSerializer(tweets, many=True)
+
+        return ApiResponse(
+            data={
+                "user": userSerializer.data,
+                "bio": bioSerializer.data,
+                "tweets": tweetSerializer.data,
+            },
+            message="Informações do usuário encontradas com sucesso",
+            status_code=200,
+        )
