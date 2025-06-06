@@ -15,7 +15,6 @@ export const ModalExternalContainer = styled.div`
 export const ModalOverlay = styled(ModalExternalContainer)`
   z-index: 2000;
   width: 100%;
-  border: 1px solid blue;
   background-color: ${({ theme }) => theme.applyAlpha(theme.colors.modalBackground, 0.85)};
 `;
 
