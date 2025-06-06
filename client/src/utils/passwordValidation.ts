@@ -32,7 +32,7 @@ export function passwordValidation(password: string): Validation {
     validation.message.push("A senha precisa ter pelo menos um símbolo");
   }
 
-  if (!patternThreeOrMoreOfSame.test(password)) {
+  if (patternThreeOrMoreOfSame.test(password)) {
     validation.message.push("A senha não pode ter mais de 2 caracteres iguais");
   }
 
