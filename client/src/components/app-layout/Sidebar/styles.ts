@@ -10,6 +10,10 @@ export const SidebarContainerStyles = styled.aside`
   top: 0;
   height: 100vh;
 
+  .logo {
+    width: 120px;
+  }
+
   @media (max-width: ${({ theme }) => theme.breakpoints.desktop}) {
     width: ${({ theme }) => theme.spacing(8.8)};
   }
