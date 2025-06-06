@@ -1,3 +1,5 @@
+import type { Tweet } from "./tweet";
+
 export type UserCreate = {
   first_name: string;
   last_name: string | null;
@@ -36,7 +38,7 @@ export type UserBioAvatar = {
   state: string;
   country: string;
   avatar: UserAvatar | { file_path: UserAvatar["file_path"] } | null;
-  user: Pick<User, "id" | "first_name" | "last_name">;
+  user: Pick<User, "id" | "first_name" | "last_name"> & { following_count: number; follower_count: number };
   created_at: string;
   updated_at: string;
 };
@@ -56,4 +58,10 @@ export type AuthState = {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
+};
+
+export type UserProfile = {
+  user: User;
+  bio: UserBioAvatar;
+  tweets: Tweet[];
 };

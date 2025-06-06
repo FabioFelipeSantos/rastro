@@ -1,4 +1,4 @@
-import type { User, UserResponseLogin } from "../../types/user";
+import type { User, UserProfile, UserResponseLogin } from "../../types/user";
 import type { ApiBaseResponse } from "./apiBaseResponse";
 
 export interface UserResponse extends ApiBaseResponse {
@@ -11,4 +11,8 @@ export interface UserListResponse extends ApiBaseResponse {
 
 export interface UserLoginServerResponse extends ApiBaseResponse {
   data: UserResponseLogin | null;
+}
+
+export interface UserProfileResponse extends ApiBaseResponse {
+  data: UserProfile | null;
 }

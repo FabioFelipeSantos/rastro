@@ -23,6 +23,7 @@ export type Colors = {
 };
 
 export interface AppDefaultTheme {
+  mode: ThemeMode["mode"];
   colors: Colors;
   changeBrightness: (color: Colors[keyof Colors]) => string;
   applyAlpha: (color: Colors[keyof Colors], alpha: number) => string;

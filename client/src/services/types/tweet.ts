@@ -1,4 +1,4 @@
-import type { Tweet, TweetStatisticsFromServer } from "../../types/tweet";
+import type { Tweet, TweetReactions, TweetStatisticsFromServer } from "../../types/tweet";
 import type { ApiBaseResponse } from "./apiBaseResponse";
 
 export interface TweetListResponse extends ApiBaseResponse {
@@ -11,4 +11,8 @@ export interface TweetResponse extends ApiBaseResponse {
 
 export interface TweetStatisticsResponse extends ApiBaseResponse {
   data: TweetStatisticsFromServer | null;
+}
+
+export interface TweetReactionsResponse extends ApiBaseResponse {
+  data: TweetReactions | null;
 }
