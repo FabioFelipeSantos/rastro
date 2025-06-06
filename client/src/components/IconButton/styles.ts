@@ -11,7 +11,8 @@ export const IconButtonStyles = styled.button`
   align-items: center;
   justify-content: center;
 
-  svg {
+  svg,
+  img {
     width: ${({ theme }) => theme.spacing(3.2)};
     height: ${({ theme }) => theme.spacing(3.2)};
   }
