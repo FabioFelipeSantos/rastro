@@ -45,14 +45,14 @@ const baseTheme: BaseTheme = {
   spacing: calculatingSpacing,
   sizing: calculatingSizing,
   breakpoints: {
-    mobile: "57.6rem",
-    tablet: "76.8rem",
-    desktop: "99.2rem",
+    mobile: "570px",
+    tablet: "768px",
+    desktop: "992px",
   },
   applyAlpha: applyingAlpha,
 };
 
-const lightTheme: AppDefaultTheme = {
+const lightTheme: Omit<AppDefaultTheme, "mode"> = {
   ...baseTheme,
   colors: {
     primary: "hsl(204, 62%, 38%)",
@@ -64,7 +64,7 @@ const lightTheme: AppDefaultTheme = {
     accent: "hsl(204, 88%, 53%)",
     error: "hsl(356, 91%, 54%)",
     success: "hsl(160, 100%, 36%)",
-    modalBackground: "hsl(0, 0%, 0%, 0.6)",
+    modalBackground: "hsl(0, 0%, 0%)",
     sidebarBackground: "hsl(0, 0%, 100%)",
     widgetBackground: "hsl(180, 14%, 97%)",
     hoverBackground: "hsl(240, 2%, 91%)",
@@ -76,7 +76,7 @@ const lightTheme: AppDefaultTheme = {
   changeBrightness: changingBrightness(-10),
 };
 
-const darkTheme: AppDefaultTheme = {
+const darkTheme: Omit<AppDefaultTheme, "mode"> = {
   ...baseTheme,
   colors: {
     primary: "hsl(204, 98%, 68%)",
@@ -106,7 +106,11 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ children = null }: ThemeProviderProps) {
   const mode = useAppSelector(themeMode);
-  const usedTheme = mode === "light" ? lightTheme : darkTheme;
+  const chosenTheme = mode === "light" ? lightTheme : darkTheme;
+  const usedTheme: AppDefaultTheme = {
+    ...chosenTheme,
+    mode,
+  };
 
   const dispatch = useAppDispatch();
 

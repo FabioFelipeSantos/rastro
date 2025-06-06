@@ -15,9 +15,13 @@ export const GlobalStyle = createGlobalStyle<{ theme: AppDefaultTheme }>`
 
   html {
     font-size: 62.5%;
+    min-height: 100vh;
+    min-width: 100vw;
   }
 
   body {
+    min-height: 100vh;
+    min-width: 100vw;
     background-color: ${({ theme }) => theme.colors.background};
     color: ${({ theme }) => theme.colors.text};
     font-size: ${({ theme }) => theme.sizing(1.6)};
