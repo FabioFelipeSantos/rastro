@@ -2,6 +2,7 @@ import styled from "styled-components";
 
 type TextAreaStyleProps = {
   $isError: boolean;
+  $isFromParent: boolean;
 };
 
 export const TextAreaStyles = styled.textarea<TextAreaStyleProps>`
@@ -15,7 +16,7 @@ export const TextAreaStyles = styled.textarea<TextAreaStyleProps>`
   font-size: ${({ theme }) => theme.sizing(1.2)};
   font-weight: ${({ $isError }) => (!$isError ? "normal" : 700)};
   width: 100%;
-  min-height: 100px;
+  min-height: ${({ theme, $isFromParent }) => ($isFromParent ? theme.sizing(6) : "100px")};
   resize: vertical;
   font-family: ${({ theme }) => theme.fonts.main};
 
