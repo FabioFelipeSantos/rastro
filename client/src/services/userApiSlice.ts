@@ -1,6 +1,11 @@
 import type { UserCreate, UserLogin } from "../types/user";
 import { apiSlice } from "./apiSlice";
-import { type UserListResponse, type UserLoginServerResponse, type UserResponse } from "./types/user";
+import {
+  type UserListResponse,
+  type UserLoginServerResponse,
+  type UserProfileResponse,
+  type UserResponse,
+} from "./types/user";
 import { getHeader } from "../utils/getHeader";
 
 export const userApiSlice = apiSlice.injectEndpoints({
@@ -32,9 +37,22 @@ export const userApiSlice = apiSlice.injectEndpoints({
         },
       }),
     }),
+    userProfile: builder.query<UserProfileResponse, { token: string; userId: string }>({
+      query: ({ token, userId }) => ({
+        url: `/users/${userId}/profile/`,
+        method: "GET",
+        headers: getHeader(token),
+      }),
+    }),
   }),
 });
 
-export const { useGetUsersQuery, useAddNewUserMutation, useUserLoginMutation, useGetLoggedUserQuery } = userApiSlice;
+export const {
+  useGetUsersQuery,
+  useAddNewUserMutation,
+  useUserLoginMutation,
+  useGetLoggedUserQuery,
+  useUserProfileQuery,
+} = userApiSlice;
 
 export type AA = ReturnType<typeof useGetUsersQuery>;
