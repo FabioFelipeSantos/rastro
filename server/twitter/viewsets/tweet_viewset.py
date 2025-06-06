@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 
 from twitter.models import Tweet, TweetAssociation
-from twitter.serializers.tweet_serializers import (
+from twitter.serializers import (
     TweetSerializer,
     ReTweetSerializer,
     ShareSerializer,
@@ -16,14 +16,20 @@ class TweetViewSet(viewsets.ModelViewSet):
     ViewSet para operações CRUD de tweets e suas interações
     """
 
-    queryset = Tweet.objects.all().order_by("-created_at")
     serializer_class = TweetSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            Tweet.objects.all()
+            .order_by("-created_at")
+            .select_related("user", "user__bio", "user__bio__avatar")[:50]
+        )
 
     @standard_response
     def list(self, request, *args, **kwargs):
         user = request.user
-        user_tweets = self.queryset.filter(user=user)
+        user_tweets = Tweet.objects.filter(user=user).order_by("-created_at")
 
         result_serializer = self.get_serializer(user_tweets, many=True)
 
@@ -201,39 +207,28 @@ class TweetViewSet(viewsets.ModelViewSet):
         if not original_tweet:
             return ApiResponse(message="Tweet não encontrado", status_code=404)
 
-        serializer = ReTweetSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        retweetSerializer = ReTweetSerializer(data=request.data)
+        retweetSerializer.is_valid(raise_exception=True)
 
-        text = serializer.validated_data["text"]
+        text = retweetSerializer.validated_data["text"]
 
         try:
-            new_tweet, _, created = TweetService.retweet(
+            retweet, _, created = TweetService.retweet(
                 user=request.user, original_tweet=original_tweet, text=text
             )
 
-            if not hasattr(new_tweet, "user") or not new_tweet.user:
+            if not hasattr(retweet, "user") or not retweet.user:
                 return ApiResponse(
                     message="Erro: Relação de usuário não carregada corretamente",
                     status_code=500,
                 )
 
-            simplified_data = {
-                "id": str(new_tweet.id),
-                "text": new_tweet.text,
-                "user": {
-                    "id": str(new_tweet.user.id),
-                    "nickname": new_tweet.user.nickname,
-                },
-            }
+            tweetSerializer = self.get_serializer(retweet)
 
             message = "Tweet retweetado com sucesso"
 
             return ApiResponse(
-                data={
-                    "original_tweet_id": str(pk),
-                    "new_tweet": simplified_data,
-                    "statistics": original_tweet.get_all_statistics(),
-                },
+                data=tweetSerializer.data,
                 message=message,
                 status_code=201,
             )
@@ -366,5 +361,41 @@ class TweetViewSet(viewsets.ModelViewSet):
         return ApiResponse(
             data={"tweet_id": str(pk), "statistics": tweet.get_all_statistics()},
             message=message,
+            status_code=200,
+        )
+
+    @action(detail=True, methods=["get"], url_path="reacted-by-user")
+    @standard_response
+    def reacted_by_user(self, request, pk=None):
+        tweet = Tweet.objects.filter(id=pk)
+
+        if not tweet:
+            return ApiResponse(
+                data=None,
+                message="Nenhum tweet foi encontrado com o id fornecido",
+                status_code=404,
+            )
+
+        reactions = TweetService.verifying_reaction_by_user(request.user, tweet[0])
+
+        return ApiResponse(
+            data=reactions,
+            message="Reações resgatadas com sucesso",
+            status_code=200,
+        )
+
+    @action(detail=False, methods=["get"], url_path="all")
+    @standard_response
+    def all_tweets(self, request):
+        import random
+
+        tweets_not_associated = [
+            tweet for tweet in self.get_queryset() if not tweet.get_if_is_associated()
+        ]
+
+        serializer = self.get_serializer(tweets_not_associated, many=True)
+        return ApiResponse(
+            data=random.sample(serializer.data, len(serializer.data)),
+            message=f"{len(serializer.data)} tweets encontrados",
             status_code=200,
         )
