@@ -17,7 +17,6 @@ export const MobileBottomNav = styled.nav`
   }
   a {
     color: ${({ theme }) => theme.colors.icon};
-    flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;

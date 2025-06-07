@@ -1,4 +1,4 @@
-import { type FC, useMemo, useCallback } from "react";
+import { type FC, useMemo } from "react"; // Remover useCallback
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Logout } from "@mui/icons-material";
 
@@ -23,68 +23,42 @@ export const Sidebar: FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
 
-      try {
-        localStorage.removeItem("token");
+    dispatch(logout());
+    dispatch(loggingOutUser());
+    dispatch(loggingOutUserBio());
+    dispatch(loggingOutUserTweets());
 
-        dispatch(logout());
-        dispatch(loggingOutUser());
-        dispatch(loggingOutUserBio());
-        dispatch(loggingOutUserTweets());
-
-        setTimeout(() => {
-          navigate("/login", { replace: true });
-        }, 0);
-      } catch (error) {
-        console.error("Erro ao fazer logout:", error);
-        navigate("/login", { replace: true });
-      }
-    },
-    [dispatch, navigate],
-  );
+    navigate("/login", { replace: true });
+  };
 
   const navItems = useMemo(() => {
     const items = [...baseNavItems];
 
-    items.push({
-      path: `/main/profile/${currentUser.id}`,
-      icon: (
-        <IconButton title={`Ir para perfil`}>
-          <img
-            src={
-              currentUserBio?.avatar?.file_path
-                ? getImageUrl(currentUserBio.avatar.file_path)
-                : avatarPath(currentUser.first_name, currentUser.last_name)
-            }
-            alt={`Avatar de ${currentUser.first_name}`}
-            style={{ width: "36px", height: "36px", borderRadius: "50%" }}
-          />
-        </IconButton>
-      ),
-      text: "Perfil",
-    });
-
-    if (currentUser?.nickname && isAuth) {
+    if (isAuth && currentUser?.id) {
       items.push({
-        path: `/logout`,
+        path: `/main/profile/${currentUser.id}`,
         icon: (
-          <IconButton
-            onClick={handleLogout}
-            title="Logout"
-          >
-            <Logout />
+          <IconButton title={`Ir para perfil`}>
+            <img
+              src={
+                currentUserBio?.avatar?.file_path
+                  ? getImageUrl(currentUserBio.avatar.file_path)
+                  : avatarPath(currentUser.first_name, currentUser.last_name)
+              }
+              alt={`Avatar de ${currentUser.first_name}`}
+              style={{ width: "36px", height: "36px", borderRadius: "50%" }}
+            />
           </IconButton>
         ),
-        text: "Sair",
+        text: "Perfil",
       });
     }
 
     return items;
-  }, [currentUser, currentUserBio, isAuth, handleLogout]);
+  }, [currentUser, currentUserBio, isAuth]);
 
   return (
     <SidebarContainerStyles>
@@ -111,6 +85,29 @@ export const Sidebar: FC = () => {
             {navItem.icon} <span>{navItem.text}</span>
           </NavItem>
         ))}
+
+        {isAuth && (
+          <div
+            onClick={handleLogout}
+            style={{ cursor: "pointer" }}
+            data-testid="logout-button"
+          >
+            <NavItem
+              to="#"
+              $isActive={false}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleLogout();
+              }}
+            >
+              <IconButton title="Logout">
+                <Logout />
+              </IconButton>
+              <span>Sair</span>
+            </NavItem>
+          </div>
+        )}
       </nav>
     </SidebarContainerStyles>
   );
