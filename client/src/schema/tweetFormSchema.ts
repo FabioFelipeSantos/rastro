@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const tweetFormSchema = z.object({
   text: z.string().min(1, "O texto do tweet é obrigatório"),

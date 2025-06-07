@@ -1,10 +1,7 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const loginFormSchema = z.object({
-  nickname_or_email: z
-    .string()
-    .min(1, "O nickname ou email é obrigatório")
-    .or(z.string().email("O email não é válido")),
+  nickname_or_email: z.string().min(1, "O nickname ou email é obrigatório").or(z.email("O email não é válido")),
   password: z.string().min(1, "O password é obrigatório"),
 });
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { passwordValidation } from "../utils/passwordValidation";
 import { nicknameValidation } from "../utils/nicknameValidation";
@@ -14,23 +14,25 @@ export const signupFormSchema = z
       .string()
       .min(3, "O nickname deve ter pelo menos 3 caracteres")
       .max(25, "O nickname deve ter no máximo 25 caracteres")
-      .superRefine((value, ctx) => {
+      .check(({ issues, value }) => {
         const validation = nicknameValidation(value);
 
         if (!validation.isValid) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          issues.push({
+            code: "custom",
+            input: value,
             message: validation.message,
           });
         }
       }),
-    email: z.string().email("O email não é válido"),
-    password: z.string().superRefine((value, ctx) => {
+    email: z.email("O email não é válido"),
+    password: z.string().check(({ issues, value }) => {
       const validation = passwordValidation(value);
 
       if (!validation.isValid) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        issues.push({
+          code: "custom",
+          input: value,
           message: validation.message.join("; "),
         });
       }
