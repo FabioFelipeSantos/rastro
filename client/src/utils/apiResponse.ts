@@ -58,7 +58,6 @@ export async function executeMutation<TData, TArg>(
         const fetchError = error as FetchBaseQueryError;
         const errorData = fetchError.data;
         let specificMessage = "Erro na comunicação com a API";
-        console.log(errorData);
 
         if (typeof errorData === "string") {
           specificMessage = errorData;
