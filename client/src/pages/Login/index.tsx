@@ -64,7 +64,6 @@ export const Login = () => {
       const user = executeQuery(resultGetUser);
       const resultGetUserBio = await dispatch(userBioApiSlice.endpoints.getUserBio.initiate(token));
       const userBio = executeQuery(resultGetUserBio);
-      console.log("Dentro do login", userBio[0]);
       const resultGetTweets = await dispatch(tweetApiSlice.endpoints.getTweets.initiate(token));
       const userTweets = executeQuery(resultGetTweets);
 

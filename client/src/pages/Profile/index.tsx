@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { user } from "../../store/reducers/user/userSlice";
 import { userTweets } from "../../store/reducers/tweetSlice";
 import { getBio } from "../../store/reducers/user/bioSlice";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { userApiSlice } from "../../services/userApiSlice";
 import { tokenFromState } from "../../store/reducers/user/authSlice";
 import { openModal } from "../../store/reducers/modalSlice";
@@ -19,10 +19,10 @@ import { avatarPath } from "../../utils/getAvatarUrlPath";
 
 export const ProfilePage: FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { userId } = useParams<{ userId: string }>();
-
   const currentUser = useAppSelector(user);
   const currentUserBio = useAppSelector(getBio);
   const currentUserTweets = useAppSelector(userTweets);
@@ -87,8 +87,6 @@ export const ProfilePage: FC = () => {
   return (
     <>
       <S.ProfileHeaderContainer>
-        {/* <S.ProfileBanner /> */}
-
         <S.ProfileAvatarContainer>
           <S.ProfileAvatar
             src={
@@ -102,6 +100,7 @@ export const ProfilePage: FC = () => {
             <Button
               style={{ alignSelf: "flex-end" }}
               text="Editar Perfil"
+              onClick={() => navigate(`/main/profile/${userId}/edit`)}
             />
           )}
         </S.ProfileAvatarContainer>

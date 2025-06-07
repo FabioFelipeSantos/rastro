@@ -10,6 +10,7 @@ import { isModalOpen } from "./store/reducers/modalSlice";
 import { Modal } from "./components/Modal";
 import { ProfilePage } from "./pages/Profile";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { EditProfilePage } from "./pages/EditProfile";
 
 export default function App() {
   const isOpen = useAppSelector(isModalOpen);
@@ -37,6 +38,10 @@ export default function App() {
             <Route
               path="/main/profile/:userId"
               element={<ProfilePage />}
+            />
+            <Route
+              path="/main/profile/:userId/edit"
+              element={<EditProfilePage />}
             />
           </Route>
           <Route
