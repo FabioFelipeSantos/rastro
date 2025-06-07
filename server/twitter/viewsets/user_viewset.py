@@ -1,10 +1,18 @@
+from django.db import transaction
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 
 from twitter.models import User, Bio, Tweet
-from twitter.serializers import UserSerializer, BioSerializer, TweetSerializer
-from twitter.services import UserService
+from twitter.serializers import (
+    UserSerializer,
+    BioSerializer,
+    TweetSerializer,
+    AvatarSerializer,
+)
+from twitter.services import UserService, BioService, AvatarService
 from twitter.response import ApiResponse, standard_response
 from twitter.permissions import IsAdmin, IsOwnerOrAdmin
 
@@ -329,3 +337,130 @@ class UserViewSet(viewsets.ModelViewSet):
             message="Informações do usuário encontradas com sucesso",
             status_code=200,
         )
+
+    @action(
+        detail=False,
+        methods=["put", "patch"],
+        url_path="profile",
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
+    @standard_response
+    def update_profile(self, request):
+        """
+        Atualiza simultaneamente dados do usuário, bio e avatar.
+        """
+        user = request.user
+        response_data = {}
+        update_messages = []
+        error_messages = []
+
+        try:
+            user_data = {}
+            user_fields = [
+                "first_name",
+                "last_name",
+                "nickname",
+                "email",
+                "password",
+                "password_confirmation",
+            ]
+
+            for field in user_fields:
+                if field in request.data:
+                    user_data[field] = request.data.get(field)
+
+            if user_data:
+                if (
+                    "password" in user_data and "password_confirmation" not in user_data
+                ) or (
+                    "password_confirmation" in user_data and "password" not in user_data
+                ):
+                    error_messages.append(
+                        "Para alterar a senha, forneça password e password_confirmation."
+                    )
+                else:
+                    if "email" in user_data and user_data["email"] != user.email:
+                        if not UserService.is_valid_email(user_data["email"]):
+                            error_messages.append("Este email já está em uso.")
+
+                    if (
+                        "nickname" in user_data
+                        and user_data["nickname"] != user.nickname
+                    ):
+                        if not UserService.is_valid_nickname(user_data["nickname"]):
+                            error_messages.append("Este nickname já está em uso.")
+
+                    if not error_messages:
+                        user_serializer = UserSerializer(
+                            user, data=user_data, partial=True
+                        )
+                        if user_serializer.is_valid():
+                            with transaction.atomic():
+                                user = user_serializer.save()
+                                response_data["user"] = user_serializer.data
+                                update_messages.append("Dados do usuário atualizados.")
+                        else:
+                            for field, errors in user_serializer.errors.items():
+                                error_messages.append(f"Erro em {field}: {errors[0]}")
+
+            bio_data = {}
+            bio_fields = ["text", "city", "state", "country"]
+
+            for field in bio_fields:
+                if field in request.data:
+                    bio_data[field] = request.data.get(field)
+
+            if bio_data:
+                bio = BioService.get_bio_by_user(user)
+
+                if not bio:
+                    bio = BioService.create_bio(user, bio_data, allow_empty=True)
+                    response_data["bio"] = BioSerializer(bio).data
+                    update_messages.append("Bio criada com sucesso.")
+                else:
+                    bio = BioService.update_bio(bio, bio_data)
+                    response_data["bio"] = BioSerializer(bio).data
+                    update_messages.append("Bio atualizada.")
+
+            if "avatar" in request.FILES:
+                bio = BioService.get_bio_by_user(user)
+                if not bio:
+                    bio = BioService.create_bio(
+                        user,
+                        {"text": "", "city": "", "state": "", "country": "Brasil"},
+                        allow_empty=True,
+                    )
+                    update_messages.append("Bio vazia criada para o avatar.")
+
+                try:
+                    avatar = AvatarService.create_avatar(bio, request.FILES["avatar"])
+                    response_data["bio"]["avatar"] = AvatarSerializer(avatar).data
+                    update_messages.append("Avatar atualizado.")
+                except ValueError as e:
+                    error_messages.append(f"Erro no avatar: {str(e)}")
+
+            if update_messages:
+                message = " ".join(update_messages)
+                if error_messages:
+                    message += f" Porém: {' '.join(error_messages)}"
+                status_code = 200
+            elif error_messages:
+                message = " ".join(error_messages)
+                status_code = 400
+            else:
+                message = "Nenhuma alteração realizada."
+                status_code = 200
+
+            return ApiResponse(
+                data=response_data, message=message, status_code=status_code
+            )
+
+        except Exception as e:
+            import traceback
+
+            print(traceback.format_exc())
+            return ApiResponse(
+                data=None,
+                message=f"Erro ao atualizar perfil: {str(e)}",
+                status_code=500,
+            )
