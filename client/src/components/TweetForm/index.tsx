@@ -1,6 +1,5 @@
 import { type FC } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Send } from "@mui/icons-material";
 
 import * as S from "./styles";
@@ -19,6 +18,7 @@ import { openModal } from "../../store/reducers/modalSlice";
 import { useNavigate } from "react-router-dom";
 import { avatarPath } from "../../utils/getAvatarUrlPath";
 import type { Tweet } from "../../types/tweet";
+import { customZodResolver } from "../../schema/zodResolver";
 
 type TweetFormProps = {
   parentTweetId?: number;
@@ -41,7 +41,7 @@ export const TweetForm: FC<TweetFormProps> = ({
     reset,
     formState: { errors },
   } = useForm<TTweetForm>({
-    resolver: zodResolver(tweetFormSchema),
+    resolver: customZodResolver(tweetFormSchema),
     defaultValues: defaultTweetForm,
   });
 

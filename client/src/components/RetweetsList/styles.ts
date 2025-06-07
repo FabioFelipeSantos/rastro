@@ -17,6 +17,6 @@ export const RetweetHeader = styled.div`
 
 export const NoRetweetsMessage = styled.p`
   padding: 16px;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.applyAlpha(theme.colors.text, 0.4)};
   text-align: center;
 `;

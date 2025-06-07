@@ -164,7 +164,7 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
     const hours = Math.round(minutes / 60);
     const days = Math.round(hours / 24);
 
-    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 60) return `${Math.ceil(seconds)}s`;
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     return `${days}d`;

@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import { useAppSelector, useAppDispatch } from "../../store/hooks";
 import { getCachedRetweetsByTweetId, addRetweetToCache, setCachedRetweets } from "../../store/reducers/tweetSlice";
 import { tokenFromState } from "../../store/reducers/user/authSlice";
@@ -29,30 +29,32 @@ export const RetweetsList: FC<RetweetsListProps> = ({ tweetId }) => {
     },
   );
 
-  if (data && !cachedRetweets) {
-    try {
-      const retweets = executeQuery<Tweet[]>({
-        data,
-        isLoading,
-        isError,
-        isSuccess: !!data,
-        error,
-      });
+  useEffect(() => {
+    if (data && !cachedRetweets) {
+      try {
+        const retweets = executeQuery<Tweet[]>({
+          data,
+          isLoading,
+          isError,
+          isSuccess: !!data,
+          error,
+        });
 
-      if (retweets) {
-        dispatch(setCachedRetweets({ tweetId, retweets }));
+        if (retweets) {
+          dispatch(setCachedRetweets({ tweetId, retweets }));
+        }
+      } catch (err) {
+        console.error("Erro ao processar retweets:", err);
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        dispatch(
+          openModal({
+            title: "Erro ao carregar retweets",
+            content: errorMessage,
+          }),
+        );
       }
-    } catch (err) {
-      console.error("Erro ao processar retweets:", err);
-      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-      dispatch(
-        openModal({
-          title: "Erro ao carregar retweets",
-          content: errorMessage,
-        }),
-      );
     }
-  }
+  }, [data, cachedRetweets, tweetId, isLoading, isError, error, dispatch]);
 
   const retweetsToShow = cachedRetweets || [];
 
