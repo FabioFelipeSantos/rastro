@@ -1,6 +1,7 @@
-import type { UserCreate, UserLogin } from "../types/user";
+import type { ProfileUpdate, UserCreate, UserLogin } from "../types/user";
 import { apiSlice } from "./apiSlice";
 import {
+  type UpdateUserProfileResponse,
   type UserListResponse,
   type UserLoginServerResponse,
   type UserProfileResponse,
@@ -44,6 +45,18 @@ export const userApiSlice = apiSlice.injectEndpoints({
         headers: getHeader(token),
       }),
     }),
+    updateProfile: builder.mutation<UpdateUserProfileResponse, { token: string; updateInfo: ProfileUpdate }>({
+      query: ({ token, updateInfo }) => {
+        const isFormData = updateInfo instanceof FormData;
+
+        return {
+          url: "/users/profile/",
+          method: "PUT",
+          headers: getHeader(token, isFormData),
+          body: updateInfo,
+        };
+      },
+    }),
   }),
 });
 
@@ -53,6 +66,7 @@ export const {
   useUserLoginMutation,
   useGetLoggedUserQuery,
   useUserProfileQuery,
+  useUpdateProfileMutation,
 } = userApiSlice;
 
 export type AA = ReturnType<typeof useGetUsersQuery>;

@@ -14,8 +14,7 @@ export type TweetCreate = {
 export type Tweet = {
   id: number;
   text: string;
-  user: Pick<User, "id" | "first_name" | "last_name" | "nickname"> & {
-    avatar_url: string | null;
+  user: Pick<User, "id" | "first_name" | "last_name" | "nickname" | "avatar_url"> & {
     following_count: number;
     follower_count: number;
   };
