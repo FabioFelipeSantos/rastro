@@ -23,6 +23,16 @@ export const ProfileAvatar = styled.img`
   border-radius: 50%;
   border: 4px solid ${({ theme }) => theme.colors.background};
   object-fit: cover;
+
+  @media screen and (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    width: 116px;
+    height: 116px;
+  }
+
+  @media screen and (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    width: 88px;
+    height: 88px;
+  }
 `;
 export const ProfileInfo = styled.div`
   padding: ${({ theme }) => theme.spacing(2)};
@@ -47,4 +57,10 @@ export const ProfileStats = styled.div`
       color: ${({ theme }) => theme.colors.text};
     }
   }
+`;
+
+export const DefaultTweetsMessage = styled.p`
+  margin-top: ${({ theme }) => theme.spacing(1.8)};
+  text-align: center;
+  color: ${({ theme }) => theme.applyAlpha(theme.colors.text, 0.5)};
 `;

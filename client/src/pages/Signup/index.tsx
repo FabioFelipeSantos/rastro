@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 import * as S from "./styles";
 import { defaultValues, signupFormSchema, type SignupFormSchema } from "../../schema/signupFormSchema";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useAddNewUserMutation, useUserLoginMutation } from "../../services/userApiSlice";
 import { Input } from "../../components/form/Input";
 import { ErrorMessage } from "../../components/form/ErrorMessage";
@@ -14,6 +13,7 @@ import { useAppDispatch } from "../../store/hooks";
 import { setUser } from "../../store/reducers/user/userSlice";
 import { openModal } from "../../store/reducers/modalSlice";
 import { login } from "../../store/reducers/user/authSlice";
+import { customZodResolver } from "../../schema/zodResolver";
 
 export const Signup: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -23,7 +23,7 @@ export const Signup: FC = () => {
     handleSubmit,
     formState: { errors },
     trigger,
-  } = useForm<SignupFormSchema>({ resolver: zodResolver(signupFormSchema), defaultValues, mode: "onBlur" });
+  } = useForm<SignupFormSchema>({ resolver: customZodResolver(signupFormSchema), defaultValues, mode: "onBlur" });
   const [addNewUser] = useAddNewUserMutation();
   const [userLogin] = useUserLoginMutation();
   const dispatch = useAppDispatch();

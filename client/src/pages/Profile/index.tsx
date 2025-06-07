@@ -129,7 +129,7 @@ export const ProfilePage: FC = () => {
           />
         ))
       ) : (
-        <p>Este usuário ainda não publicou tweets.</p>
+        <S.DefaultTweetsMessage>Este usuário ainda não publicou tweets.</S.DefaultTweetsMessage>
       )}
     </>
   );

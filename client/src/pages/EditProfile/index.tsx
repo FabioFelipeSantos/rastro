@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, type FC } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit } from "@mui/icons-material";
 
 import * as S from "./styles";
@@ -21,6 +20,7 @@ import { useUpdateProfileMutation } from "../../services/userApiSlice";
 import { executeMutation } from "../../utils/apiResponse";
 import { editProfileSchema, type EditProfileSchema } from "../../schema/editProfileSchema";
 import type { ProfileUpdate } from "../../types/user";
+import { customZodResolver } from "../../schema/zodResolver";
 
 export const EditProfilePage: FC = () => {
   const dispatch = useAppDispatch();
@@ -44,7 +44,7 @@ export const EditProfilePage: FC = () => {
     reset,
     formState: { errors },
   } = useForm<EditProfileSchema>({
-    resolver: zodResolver(editProfileSchema),
+    resolver: customZodResolver(editProfileSchema),
     defaultValues: {
       first_name: currentUser.first_name,
       last_name: currentUser.last_name || undefined,
@@ -210,7 +210,7 @@ export const EditProfilePage: FC = () => {
           <S.FormField>
             <TextArea
               {...register("bio")}
-              placeholder="Escreva algo sobre você (máx. 160 caracteres)"
+              placeholder="Escreva algo sobre você"
             />
             {errors.bio && <ErrorMessage text={errors.bio.message!} />}
           </S.FormField>

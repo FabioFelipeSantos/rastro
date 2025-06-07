@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { AccountBox } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import { executeQuery, executeMutation } from "../../utils/apiResponse";
 import { useUserLoginMutation, userApiSlice } from "../../services/userApiSlice";
@@ -23,6 +22,7 @@ import rastroLogo from "../../images/logo.png";
 import { Input } from "../../components/form/Input";
 import { Button } from "../../components/Button";
 import type { UserLogin, UserResponseLogin } from "../../types/user";
+import { customZodResolver } from "../../schema/zodResolver";
 
 export const Login = () => {
   const [isSendingLogin, setIsSendingLogin] = useState<boolean>(false);
@@ -46,9 +46,9 @@ export const Login = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormSchema>({
-    mode: "onBlur",
+    mode: "onSubmit",
     defaultValues,
-    resolver: zodResolver(loginFormSchema),
+    resolver: customZodResolver(loginFormSchema),
   });
 
   const [sendUserLogin] = useUserLoginMutation();
