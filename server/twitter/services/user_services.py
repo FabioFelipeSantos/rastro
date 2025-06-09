@@ -117,16 +117,10 @@ class UserService:
                 "follower": {
                     "id": str(follower.id),
                     "nickname": follower.nickname,
-                    "email": follower.email,
-                    "followers_count": follower.followers.count(),
-                    "following_count": follower.following.count(),
                 },
                 "followed": {
                     "id": str(user_to_follow.id),
                     "nickname": user_to_follow.nickname,
-                    "email": user_to_follow.email,
-                    "followers_count": user_to_follow.followers.count(),
-                    "following_count": user_to_follow.following.count(),
                 },
             }
 
