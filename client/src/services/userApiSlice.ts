@@ -1,11 +1,14 @@
 import type { ProfileUpdate, UserCreate, UserLogin } from "../types/user";
 import { apiSlice } from "./apiSlice";
-import {
-  type UpdateUserProfileResponse,
-  type UserListResponse,
-  type UserLoginServerResponse,
-  type UserProfileResponse,
-  type UserResponse,
+import type {
+  UpdateUserProfileResponse,
+  UserListResponse,
+  UserLoginServerResponse,
+  UserProfileResponse,
+  UserResponse,
+  AllFollowingUsersResponse,
+  FollowAnUserResponse,
+  UnfollowAnUserResponse,
 } from "./types/user";
 import { getHeader } from "../utils/getHeader";
 
@@ -57,6 +60,27 @@ export const userApiSlice = apiSlice.injectEndpoints({
         };
       },
     }),
+    getFollowingUsers: builder.query<AllFollowingUsersResponse, string>({
+      query: (token) => ({
+        url: "/users/following/",
+        method: "GET",
+        headers: getHeader(token),
+      }),
+    }),
+    followAnUser: builder.mutation<FollowAnUserResponse, { token: string; userId: string }>({
+      query: ({ token, userId }) => ({
+        url: `/users/follow/${userId}/`,
+        method: "POST",
+        headers: getHeader(token),
+      }),
+    }),
+    unfollowAnUser: builder.mutation<UnfollowAnUserResponse, { token: string; userId: string }>({
+      query: ({ token, userId }) => ({
+        url: `/users/unfollow/${userId}/`,
+        method: "POST",
+        headers: getHeader(token),
+      }),
+    }),
   }),
 });
 
@@ -67,6 +91,9 @@ export const {
   useGetLoggedUserQuery,
   useUserProfileQuery,
   useUpdateProfileMutation,
+  useGetFollowingUsersQuery,
+  useFollowAnUserMutation,
+  useUnfollowAnUserMutation,
 } = userApiSlice;
 
 export type AA = ReturnType<typeof useGetUsersQuery>;
