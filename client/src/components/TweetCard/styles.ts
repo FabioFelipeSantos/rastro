@@ -33,6 +33,18 @@ export const TweetHeader = styled.div<{ $isRetweet?: boolean }>`
   }
 `;
 
+type FollowContainerProps = {
+  $isRetweet: boolean;
+};
+
+export const FollowContainer = styled.div<FollowContainerProps>`
+  margin-left: ${({ theme }) => theme.spacing(1.4)};
+
+  .follow-icon {
+    font-size: ${({ theme, $isRetweet }) => ($isRetweet ? theme.sizing(1.8) : theme.sizing(2.2))};
+  }
+`;
+
 export const TweetBody = styled.p<{ $isRetweet?: boolean }>`
   margin: 0 0 ${({ theme }) => theme.spacing(1.2)} 0;
   white-space: pre-wrap;

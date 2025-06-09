@@ -4,7 +4,7 @@ export const IconButtonStyles = styled.button`
   background: none;
   border: none;
   color: ${({ theme }) => theme.colors.icon};
-  padding: ${({ theme }) => theme.spacing(0.8)};
+  /* padding: ${({ theme }) => theme.spacing(0.8)}; */
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -21,4 +21,15 @@ export const IconButtonStyles = styled.button`
     background-color: ${({ theme }) => theme.colors.hoverBackground};
     color: ${({ theme }) => theme.colors.primary};
   }
+
+  .profile-icon {
+    border-radius: 50%;
+    margin-right: ${({ theme }) => theme.spacing(1.2)};
+  }
+
+  /* @media screen and (max-width: ${({ theme }) => theme.breakpoints.desktop}) {
+    .profile-icon {
+      aspect-ratio: 1;
+    }
+  } */
 `;

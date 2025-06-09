@@ -177,7 +177,7 @@ class TweetViewSet(viewsets.ModelViewSet):
             status_code=200,
         )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path="remove-dislike")
     @standard_response
     def remove_dislike(self, request, pk=None):
         """Endpoint para remover o não gostar de um tweet"""
@@ -284,7 +284,7 @@ class TweetViewSet(viewsets.ModelViewSet):
                 status_code=500,
             )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path="remove-retweet")
     @standard_response
     def remove_retweet(self, request, pk=None):
         """Endpoint para desfazer retweet"""
@@ -342,7 +342,7 @@ class TweetViewSet(viewsets.ModelViewSet):
             status_code=200,
         )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path="remove-share")
     @standard_response
     def remove_share(self, request, pk=None):
         """Endpoint para desfazer compartilhamento"""

@@ -6,7 +6,7 @@ import * as S from "./styles";
 import { tweetFormSchema, type TTweetForm, defaultTweetForm } from "../../schema/tweetFormSchema";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { tokenFromState } from "../../store/reducers/user/authSlice";
-import { addTweet } from "../../store/reducers/tweetSlice";
+import { addStatisticTweet, addTweet, addRetweet } from "../../store/reducers/tweetSlice";
 import { useAddRetweetMutation, useAddTweetMutation } from "../../services/tweetApiSlice";
 import { getBio } from "../../store/reducers/user/bioSlice";
 import { TextArea } from "../form/TextArea";
@@ -81,16 +81,15 @@ export const TweetForm: FC<TweetFormProps> = ({
       let newTweet: Tweet;
       if (!parentTweetId) {
         newTweet = await executeMutation(addTweetToServer, payload);
+        dispatch(addTweet(newTweet));
       } else {
         const retweetPayload = {
           ...payload,
           tweetId: parentTweetId,
         };
         newTweet = await executeMutation(addReTweet, retweetPayload);
-      }
-
-      if (!parentTweetId) {
-        dispatch(addTweet(newTweet));
+        dispatch(addStatisticTweet({ id: parentTweetId, type: "re_tweets" }));
+        dispatch(addRetweet(newTweet));
       }
 
       if (onSubmitSuccess) {

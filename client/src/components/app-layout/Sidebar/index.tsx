@@ -43,13 +43,14 @@ export const Sidebar: FC = () => {
         icon: (
           <IconButton title={`Ir para perfil`}>
             <img
+              className="profile-icon"
               src={
                 currentUserBio?.avatar?.file_path
                   ? getImageUrl(currentUserBio.avatar.file_path)
                   : avatarPath(currentUser.first_name, currentUser.last_name)
               }
               alt={`Avatar de ${currentUser.first_name}`}
-              style={{ width: "36px", height: "36px", borderRadius: "50%" }}
+              // style={{ width: "36px", height: "36px", borderRadius: "50%" }}
             />
           </IconButton>
         ),

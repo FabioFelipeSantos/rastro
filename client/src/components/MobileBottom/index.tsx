@@ -47,7 +47,7 @@ export const MobileBottom: FC = () => {
                   : avatarPath(currentUser.first_name, currentUser.last_name)
               }
               alt={`Avatar de ${currentUser.first_name}`}
-              style={{ width: "36px", height: "36px", borderRadius: "50%" }}
+              style={{ width: "24px", height: "24px", borderRadius: "50%" }}
             />
           </IconButton>
         ),

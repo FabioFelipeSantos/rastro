@@ -46,6 +46,9 @@ const tweetSlice = createSlice({
       state.userTweets.unshift(action.payload);
       state.tweets.unshift(action.payload);
     },
+    addRetweet: (state, action: PayloadAction<Tweet>) => {
+      state.userTweets.unshift(action.payload);
+    },
     addStatisticTweet: (
       state,
       action: PayloadAction<{ id: Tweet["id"]; type: "likes" | "dislikes" | "re_tweets" | "shares" }>,
@@ -59,6 +62,13 @@ const tweetSlice = createSlice({
       if (userTweet) {
         userTweet.statistics[action.payload.type]++;
       }
+
+      Object.values(state.cachedRetweets).forEach((retweetList) => {
+        const cachedTweet = retweetList.find((retweet) => retweet.id === action.payload.id);
+        if (cachedTweet) {
+          cachedTweet.statistics[action.payload.type]++;
+        }
+      });
     },
     removeStatisticTweet: (
       state,
@@ -73,6 +83,13 @@ const tweetSlice = createSlice({
       if (userTweet) {
         userTweet.statistics[action.payload.type] = Math.max(0, userTweet.statistics[action.payload.type] - 1);
       }
+
+      Object.values(state.cachedRetweets).forEach((retweetList) => {
+        const cachedTweet = retweetList.find((retweet) => retweet.id === action.payload.id);
+        if (cachedTweet) {
+          cachedTweet.statistics[action.payload.type] = Math.max(0, cachedTweet.statistics[action.payload.type] - 1);
+        }
+      });
     },
     setUserReaction: (state, action: PayloadAction<{ tweetId: number; reactions: TweetReactions }>) => {
       const { tweetId, reactions } = action.payload;
@@ -115,7 +132,6 @@ const tweetSlice = createSlice({
       state.cachedRetweets[tweetId] = retweets;
       state.retweetCacheCount += 1;
     },
-
     toggleExpandRetweets: (state, action: PayloadAction<{ tweetId: number | null }>) => {
       const { tweetId } = action.payload;
 
@@ -158,6 +174,7 @@ export const {
   setAllTweets,
   addTweet,
   addStatisticTweet,
+  addRetweet,
   removeStatisticTweet,
   loggingOutUserTweets,
   setUserReaction,

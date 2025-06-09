@@ -109,7 +109,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(following, many=True)
         return ApiResponse(
-            data=serializer.data,
+            data=[
+                {"user_id": user["id"], "nickname": user["nickname"]}
+                for user in serializer.data
+            ],
             message="Usuários seguidos encontrados com sucesso",
             status_code=200,
         )
@@ -293,14 +296,10 @@ class UserViewSet(viewsets.ModelViewSet):
                 "unfollower": {
                     "id": str(follower.id),
                     "nickname": follower.nickname,
-                    "followers_count": follower.followers.count(),
-                    "following_count": follower.following.count(),
                 },
                 "unfollowed": {
                     "id": str(user_to_unfollow.id),
                     "nickname": user_to_unfollow.nickname,
-                    "followers_count": user_to_unfollow.followers.count(),
-                    "following_count": user_to_unfollow.following.count(),
                 },
             }
 

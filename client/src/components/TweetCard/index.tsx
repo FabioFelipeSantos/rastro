@@ -1,5 +1,5 @@
 import { useState, useEffect, type FC, type JSX, useCallback } from "react";
-import { ReplyAll, ThumbUp, ThumbDown, Share } from "@mui/icons-material";
+import { ReplyAll, ThumbUp, ThumbDown, Share, PersonAdd, PersonRemove } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
 import { type TweetReactions, type Tweet, type TweetStatisticsFromServer } from "../../types/tweet";
@@ -12,6 +12,7 @@ import { executeMutation, executeQuery } from "../../utils/apiResponse";
 import {
   useReactionsByUserQuery,
   useSendATweetActionMutation,
+  useRemoveTweetActionMutation,
   type TweetActionsArgs,
 } from "../../services/tweetApiSlice";
 import {
@@ -27,6 +28,8 @@ import { tokenFromState } from "../../store/reducers/user/authSlice";
 import { openModal } from "../../store/reducers/modalSlice";
 import { avatarPath } from "../../utils/getAvatarUrlPath";
 import { RetweetsList } from "../RetweetsList";
+import { addFollowingUser, followingUsers, removeFollowingUser } from "../../store/reducers/user/userSlice";
+import { useFollowAnUserMutation, useUnfollowAnUserMutation } from "../../services/userApiSlice";
 
 type TweetCardProps = {
   tweet: Tweet;
@@ -41,12 +44,20 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
   const token = useAppSelector(tokenFromState);
   const dispatch = useAppDispatch();
   const userBio = useAppSelector(getBio);
+  const followedUsers = useAppSelector(followingUsers);
   const [sendTweetAction] = useSendATweetActionMutation();
+  const [removeTweetAction] = useRemoveTweetActionMutation();
+  const [followTheUser] = useFollowAnUserMutation();
+  const [unfollowTheUser] = useUnfollowAnUserMutation();
+  const [isTweetUserFollowedByLoggedUser, setIsTweetUserFollowedByLoggedUser] = useState<boolean>(
+    followedUsers.filter((followed) => followed.user_id === tweet.user.id).length === 1,
+  );
 
   const reactionsOnTweet = useAppSelector((state) => getUserReactionsByTweetId(state, tweet.id));
 
   const expandedTweetInfo = useAppSelector(getExpandedTweetInfo);
   const isExpanded = expandedTweetInfo.isExpanded && expandedTweetInfo.tweetId === tweet.id;
+  const isTweetUserTheLoggedUser = tweet.user.id === userBio.user.id;
 
   const {
     data: reactionResponseData,
@@ -65,6 +76,12 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
       refetchOnReconnect: false,
     },
   );
+
+  useEffect(() => {
+    setIsTweetUserFollowedByLoggedUser(
+      followedUsers.filter((followed) => followed.user_id === tweet.user.id).length === 1,
+    );
+  }, [followedUsers, tweet.user.id]);
 
   useEffect(() => {
     if (isSuccessReactions && reactionResponseData) {
@@ -181,59 +198,53 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
         return;
       }
 
-      const currentReactionState = reactionsOnTweet[action];
-
-      if (currentReactionState) {
-        dispatch(
-          openModal({
-            title: "Ação já realizada",
-            content: "Você já realizou esta ação neste tweet.",
-          }),
-        );
-        return;
-      }
-
-      try {
-        setIsSendingAction(true);
-
-        dispatch(
-          toggleUserReaction({
-            tweetId: tweet_id,
-            reactionType: action,
-            value: true,
-          }),
-        );
-
-        dispatch(
-          addStatisticTweet({
-            id: tweet_id,
-            type: `${action}s`,
-          }),
-        );
-
-        await executeMutation<TweetStatisticsFromServer, TweetActionsArgs>(sendTweetAction, {
+      const applyingUserActionOnTweet = async (
+        mutation: typeof removeTweetAction | typeof sendTweetAction,
+        reactionValue: boolean,
+      ) => {
+        await executeMutation<TweetStatisticsFromServer, TweetActionsArgs>(mutation, {
           token: token!,
           tweet_id,
           action,
         });
-      } catch (error) {
-        console.error("Erro ao executar ação no tweet:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
 
         dispatch(
           toggleUserReaction({
             tweetId: tweet_id,
             reactionType: action,
-            value: false,
+            value: reactionValue,
           }),
         );
 
-        dispatch(
-          removeStatisticTweet({
-            id: tweet_id,
-            type: `${action}s`,
-          }),
-        );
+        if (reactionValue) {
+          dispatch(
+            addStatisticTweet({
+              id: tweet_id,
+              type: `${action}s`,
+            }),
+          );
+        } else {
+          dispatch(
+            removeStatisticTweet({
+              id: tweet_id,
+              type: `${action}s`,
+            }),
+          );
+        }
+      };
+
+      try {
+        setIsSendingAction(true);
+
+        const currentReactionState = reactionsOnTweet[action];
+
+        if (!currentReactionState) {
+          await applyingUserActionOnTweet(sendTweetAction, true);
+        } else {
+          await applyingUserActionOnTweet(removeTweetAction, false);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
         dispatch(
           openModal({
@@ -245,8 +256,33 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
         setIsSendingAction(false);
       }
     },
-    [dispatch, reactionsOnTweet, sendTweetAction, token, handleExpandRetweets],
+    [dispatch, reactionsOnTweet, sendTweetAction, token, handleExpandRetweets, removeTweetAction],
   );
+
+  const handleFollow = useCallback(async () => {
+    try {
+      const queryArgs = { token: token!, userId: tweet.user.id };
+      if (isTweetUserFollowedByLoggedUser) {
+        await executeMutation(unfollowTheUser, queryArgs);
+
+        dispatch(removeFollowingUser(tweet.user.id));
+      } else {
+        await executeMutation(followTheUser, queryArgs);
+
+        dispatch(addFollowingUser({ user_id: tweet.user.id, nickname: tweet.user.nickname }));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [
+    isTweetUserFollowedByLoggedUser,
+    unfollowTheUser,
+    dispatch,
+    followTheUser,
+    token,
+    tweet.user.id,
+    tweet.user.nickname,
+  ]);
 
   return (
     <>
@@ -267,9 +303,25 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
         <S.TweetContent>
           <S.TweetHeader $isRetweet={isRetweet}>
             <strong>{tweet.user.first_name}</strong>
+
             <span>
               @{tweet.user.nickname} · {timeAgo(tweet.created_at)}
             </span>
+
+            {!isTweetUserTheLoggedUser && (
+              <S.FollowContainer $isRetweet={isRetweet}>
+                <S.ActionButton
+                  $isReacted={false}
+                  onClick={handleFollow}
+                >
+                  {!isTweetUserFollowedByLoggedUser ? (
+                    <PersonAdd className="follow-icon" />
+                  ) : (
+                    <PersonRemove className="follow-icon" />
+                  )}
+                </S.ActionButton>
+              </S.FollowContainer>
+            )}
           </S.TweetHeader>
 
           <S.TweetBody $isRetweet={isRetweet}>{tweet.text}</S.TweetBody>
@@ -281,11 +333,7 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
               return (
                 <S.ActionButton
                   key={tweetAction.action}
-                  disabled={
-                    isSendingAction ||
-                    userBio?.user?.id === tweet.user.id ||
-                    (tweetAction.reacted && !tweetAction.isRetweetButton)
-                  }
+                  disabled={isSendingAction || userBio?.user?.id === tweet.user.id}
                   onClick={() => handleTweetAction(tweet.id, tweetAction.action)}
                   $isReacted={tweetAction.reacted}
                   $isRetweetButton={tweetAction.isRetweetButton}

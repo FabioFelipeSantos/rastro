@@ -15,6 +15,13 @@ export type RetweetArgs = {
   newTweet: TweetCreate;
 };
 
+enum RemovingActions {
+  like = "unlike",
+  dislike = "remove-dislike",
+  retweet = "remove-retweet",
+  share = "remove-share",
+}
+
 export const tweetApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTweets: builder.query<TweetListResponse, string>({
@@ -35,6 +42,13 @@ export const tweetApiSlice = apiSlice.injectEndpoints({
     sendATweetAction: builder.mutation<TweetStatisticsResponse, TweetActionsArgs>({
       query: ({ token, tweet_id, action }) => ({
         url: `/tweets/${tweet_id}/${action}/`,
+        method: "POST",
+        headers: getHeader(token),
+      }),
+    }),
+    removeTweetAction: builder.mutation<TweetStatisticsResponse, TweetActionsArgs>({
+      query: ({ token, tweet_id, action }) => ({
+        url: `tweets/${tweet_id}/${RemovingActions[action]}/`,
         method: "POST",
         headers: getHeader(token),
       }),
@@ -82,4 +96,5 @@ export const {
   useGetAllTweetsQuery,
   useGetAllAssociatedTweetsQuery,
   useAddRetweetMutation,
+  useRemoveTweetActionMutation,
 } = tweetApiSlice;
