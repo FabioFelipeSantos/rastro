@@ -9,7 +9,7 @@ import { userBioApiSlice } from "../../services/userBioApiSlice";
 import { tweetApiSlice } from "../../services/tweetApiSlice";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { isAuthenticated, login, tokenFromState } from "../../store/reducers/user/authSlice";
-import { setUser } from "../../store/reducers/user/userSlice";
+import { setFollowingUsers, setUser } from "../../store/reducers/user/userSlice";
 import { setBio } from "../../store/reducers/user/bioSlice";
 import { setUserTweets } from "../../store/reducers/tweetSlice";
 import { openModal } from "../../store/reducers/modalSlice";
@@ -64,6 +64,8 @@ export const Login = () => {
       const user = executeQuery(resultGetUser);
       const resultGetUserBio = await dispatch(userBioApiSlice.endpoints.getUserBio.initiate(token));
       const userBio = executeQuery(resultGetUserBio);
+      const resultGetFollowingUsers = await dispatch(userApiSlice.endpoints.getFollowingUsers.initiate(token));
+      const followingUsers = executeQuery(resultGetFollowingUsers);
       const resultGetTweets = await dispatch(tweetApiSlice.endpoints.getTweets.initiate(token));
       const userTweets = executeQuery(resultGetTweets);
 
@@ -71,6 +73,7 @@ export const Login = () => {
       dispatch(setUser(user));
       dispatch(setBio(userBio[0]));
       dispatch(setUserTweets(userTweets));
+      dispatch(setFollowingUsers(followingUsers));
 
       navigate(from, { replace: true });
     } catch (e) {
