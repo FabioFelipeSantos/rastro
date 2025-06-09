@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const RetweetsContainer = styled.div`
-  border-left: 2px solid ${({ theme }) => theme.colors.primary};
+  border-left: 1px solid ${({ theme }) => theme.applyAlpha(theme.colors.border, 0.9)};
   margin-left: 24px;
   padding-left: 12px;
   margin-bottom: 16px;
