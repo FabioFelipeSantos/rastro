@@ -5,6 +5,7 @@ Importa os dados dos arquivos específicos e cria registros no banco de dados.
 
 import os
 import django
+import random
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "twitter_api.settings")
 django.setup()
@@ -12,6 +13,7 @@ django.setup()
 from django.db import transaction
 
 from twitter.models import User, Tweet, Bio, Avatar, TweetAssociation
+from twitter.models.tweet_statistics import Like, Dislike, Share, Re_Tweet
 
 from database_seed.user_data import USERS_DATA, USER_PASSWORD
 from database_seed.tweet_data import TWEETS_DATA
@@ -246,6 +248,11 @@ def create_retweets(users_dict, tweets_dict):
                 association_type="retweet",
             )
 
+            Re_Tweet.objects.create(
+                user=responder,
+                tweet=parent_tweet,
+            )
+
             print(
                 f"Retweet criado: {responder_nickname} respondeu ao tweet de {parent_nickname}"
             )
@@ -254,6 +261,218 @@ def create_retweets(users_dict, tweets_dict):
             print(f"Erro ao criar retweet: {e}")
 
     print("Retweets criados com sucesso.")
+
+
+def create_tweet_interactions(users_dict, tweets_dict):
+    """
+    Cria interações (likes, dislikes, shares) entre usuários e tweets.
+    Cada usuário pode realizar cada tipo de interação apenas uma vez por tweet.
+    """
+    print("Criando interações com os tweets (likes, dislikes, shares)")
+
+    if not users_dict or not tweets_dict:
+        print("Sem usuários ou tweets para criar interações.")
+        return
+
+    all_tweets = list(Tweet.objects.all())
+    users_list = list(users_dict.values())
+
+    # Mapa para guardar a casa de cada usuário (a partir do dicionário users_dict)
+    user_houses = {}
+    for nickname, user in users_dict.items():
+        # Obtém a casa (cidade da bio) do usuário do dicionário users_dict
+        try:
+            bio = Bio.objects.get(user=user)
+            user_houses[user.id] = bio.city
+        except Bio.DoesNotExist:
+            # Fallback para caso a bio não exista
+            user_houses[user.id] = "Desconhecida"
+            print(
+                f"Aviso: Bio não encontrada para {user.nickname}, usando casa 'Desconhecida'"
+            )
+
+    # Contador para garantir número mínimo de interações por usuário
+    interaction_counter = {user.id: 0 for user in users_list}
+    min_interactions = 10
+
+    # Criando interações com base em lógica de casas e relações
+    for user in users_list:
+        # Lista para rastrear tweets com os quais o usuário já interagiu
+        interacted_tweets = set()
+        user_house = user_houses.get(user.id, "Desconhecida")
+
+        # 1. Primeira rodada: interagir com tweets que fazem sentido baseado na casa
+        for tweet in all_tweets:
+            # Pular seu próprio tweet
+            if tweet.user == user:
+                continue
+
+            # Obtém a casa do autor do tweet
+            tweet_author_house = user_houses.get(tweet.user.id, "Desconhecida")
+            is_professor = getattr(user, "is_professor", False)
+
+            # Definir probabilidades baseadas em relações
+            like_probability = 0.0
+            dislike_probability = 0.0
+            share_probability = 0.0
+
+            # Mesma casa - mais provável curtir e compartilhar
+            if tweet_author_house == user_house:
+                like_probability = 0.7
+                dislike_probability = 0.1
+                share_probability = 0.3
+            # Casas aliadas (Grifinória-Lufa-Lufa ou Sonserina-Corvinal)
+            elif user_house in ["Grifinória", "Lufa-Lufa"] and tweet_author_house in [
+                "Grifinória",
+                "Lufa-Lufa",
+            ]:
+                like_probability = 0.6
+                dislike_probability = 0.15
+                share_probability = 0.25
+            elif user_house in ["Sonserina", "Corvinal"] and tweet_author_house in [
+                "Sonserina",
+                "Corvinal",
+            ]:
+                like_probability = 0.6
+                dislike_probability = 0.15
+                share_probability = 0.25
+            # Casas rivais - mais provável dislike
+            else:
+                like_probability = 0.15
+                dislike_probability = 0.6
+                share_probability = 0.1
+
+            # Professores são mais contidos em suas interações
+            if is_professor:
+                like_probability *= 0.8
+                dislike_probability *= 0.6
+                share_probability *= 0.5
+
+            # O Escolhido (Harry) recebe mais interações
+            if tweet.user.nickname == "TheChosenOne":
+                like_probability += 0.2
+                share_probability += 0.2
+
+            # Draco Malfoy recebe mais dislikes de Grifinória/Lufa-Lufa
+            if tweet.user.nickname == "DracoM" and user_house in [
+                "Grifinória",
+                "Lufa-Lufa",
+            ]:
+                dislike_probability += 0.3
+                like_probability -= 0.1
+
+            # Criar interações baseadas nas probabilidades
+            interactions_made = False
+
+            # Like
+            if random.random() < like_probability:
+                try:
+                    Like.objects.create(user=user, tweet=tweet)
+                    interacted_tweets.add(tweet.id)
+                    interaction_counter[user.id] += 1
+                    interactions_made = True
+                    print(
+                        f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname}"
+                    )
+                except Exception as e:
+                    pass  # Ignora se já existe
+
+            # Dislike
+            if random.random() < dislike_probability:
+                try:
+                    Dislike.objects.create(user=user, tweet=tweet)
+                    interacted_tweets.add(tweet.id)
+                    interaction_counter[user.id] += 1
+                    interactions_made = True
+                    print(
+                        f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname}"
+                    )
+                except Exception as e:
+                    pass  # Ignora se já existe
+
+            # Share
+            if random.random() < share_probability:
+                try:
+                    Share.objects.create(user=user, tweet=tweet)
+                    interacted_tweets.add(tweet.id)
+                    interaction_counter[user.id] += 1
+                    interactions_made = True
+                    print(
+                        f"🔄 {user.nickname} compartilhou um tweet de {tweet.user.nickname}"
+                    )
+                except Exception as e:
+                    pass  # Ignora se já existe
+
+    # 2. Segunda rodada: garantir número mínimo de interações
+    for user in users_list:
+        remaining_interactions = min_interactions - interaction_counter[user.id]
+
+        if remaining_interactions <= 0:
+            continue
+
+        # Tweets com os quais o usuário ainda não interagiu
+        available_tweets = [
+            t for t in all_tweets if t.user != user and t.id not in interacted_tweets
+        ]
+
+        # Shuffle para aleatoriedade
+        random.shuffle(available_tweets)
+
+        for tweet in available_tweets[
+            : remaining_interactions * 2
+        ]:  # Duplicar para garantir chances suficientes
+            # Escolher uma interação aleatória
+            interaction_type = random.choice(["like", "dislike", "share"])
+
+            try:
+                if interaction_type == "like":
+                    Like.objects.create(user=user, tweet=tweet)
+                    print(
+                        f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname} (complemento)"
+                    )
+                elif interaction_type == "dislike":
+                    Dislike.objects.create(user=user, tweet=tweet)
+                    print(
+                        f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname} (complemento)"
+                    )
+                else:  # share
+                    Share.objects.create(user=user, tweet=tweet)
+                    print(
+                        f"🔄 {user.nickname} compartilhou um tweet de {tweet.user.nickname} (complemento)"
+                    )
+
+                interacted_tweets.add(tweet.id)
+                interaction_counter[user.id] += 1
+
+                if interaction_counter[user.id] >= min_interactions:
+                    break
+
+            except Exception:
+                pass  # Ignora se já existe
+
+    # Estatísticas finais
+    total_likes = Like.objects.count()
+    total_dislikes = Dislike.objects.count()
+    total_shares = Share.objects.count()
+
+    print(f"\nEstatísticas de interações:")
+    print(f"Total de Likes: {total_likes}")
+    print(f"Total de Dislikes: {total_dislikes}")
+    print(f"Total de Shares: {total_shares}")
+    print(f"Total Geral: {total_likes + total_dislikes + total_shares}")
+
+    # Verificar usuários com menos interações que o mínimo
+    below_minimum = [
+        user.nickname
+        for user in users_list
+        if interaction_counter[user.id] < min_interactions
+    ]
+    if below_minimum:
+        print(
+            f"Aviso: Os seguintes usuários têm menos de {min_interactions} interações: {', '.join(below_minimum)}"
+        )
+    else:
+        print(f"Todos os usuários têm pelo menos {min_interactions} interações! ✅")
 
 
 @transaction.atomic
@@ -267,6 +486,11 @@ def populate_database():
 
     print("Iniciando a população do banco de dados...")
     print("Limpando dados antigos...")
+    Like.objects.all().delete()
+    Dislike.objects.all().delete()
+    Share.objects.all().delete()
+    Re_Tweet.objects.all().delete()
+
     TweetAssociation.objects.all().delete()
     Tweet.objects.all().delete()
     Avatar.objects.all().delete()
@@ -280,6 +504,7 @@ def populate_database():
 
         if created_tweets_map:
             create_retweets(created_users_map, created_tweets_map)
+            create_tweet_interactions(created_users_map, created_tweets_map)
 
         print("População do banco de dados concluída com sucesso!")
     else:
