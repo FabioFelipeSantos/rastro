@@ -3,6 +3,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.conf import settings
+from django.core.files.storage import default_storage
 
 
 from twitter.models import User, Bio, Tweet
@@ -433,6 +435,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
                 try:
                     avatar = AvatarService.create_avatar(bio, request.FILES["avatar"])
+                    if "bio" not in response_data:
+                        response_data["bio"] = BioSerializer(bio).data
                     response_data["bio"]["avatar"] = AvatarSerializer(avatar).data
                     update_messages.append("Avatar atualizado.")
                 except ValueError as e:

@@ -49,7 +49,6 @@ class BioViewSet(viewsets.ModelViewSet):
 
             if "avatar" in request.FILES:
                 avatar_file = request.FILES["avatar"]
-                print(f"FOUND AVATAR: {avatar_file.name}, size: {avatar_file.size}")
 
                 try:
                     avatar = AvatarService.create_avatar(bio, avatar_file)
