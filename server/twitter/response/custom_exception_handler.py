@@ -1,8 +1,5 @@
 from rest_framework.views import exception_handler
 from .api_response import ApiResponse
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 def custom_exception_handler(exc, context):
@@ -10,11 +7,6 @@ def custom_exception_handler(exc, context):
         response = exception_handler(exc, context)
 
         if response is None:
-            logger.error(f"Erro não tratado: {exc}")
-            import traceback
-
-            logger.error(traceback.format_exc())
-
             return ApiResponse(
                 data={"error_type": str(type(exc).__name__)},
                 message="Erro interno no servidor",
@@ -36,10 +28,7 @@ def custom_exception_handler(exc, context):
             message="Erro na requisição",
         )
     except Exception as e:
-        logger.critical(f"Erro no manipulador de exceções: {e}")
         import traceback
-
-        logger.critical(traceback.format_exc())
 
         return ApiResponse(
             data=None, message="Erro ao processar requisição", status_code=500

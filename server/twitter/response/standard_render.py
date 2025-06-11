@@ -1,8 +1,5 @@
 from rest_framework.renderers import JSONRenderer
 from .safe_json_encoder import SafeJSONEncoder
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class StandardJSONRenderer(JSONRenderer):
@@ -29,9 +26,6 @@ class StandardJSONRenderer(JSONRenderer):
         except ValueError as e:
             if "Circular reference detected" in str(e):
                 import traceback
-
-                logger.error(f"Referência circular detectada: {e}")
-                logger.error(traceback.format_exc())
 
                 fallback = {
                     "status": status_code,
