@@ -16,6 +16,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/hp.png",
+            },
         },
         "is_professor": False,
     },
@@ -29,6 +32,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/hermione.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -42,6 +48,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/ron.png",
+            },
         },
         "is_professor": False,
     },
@@ -56,6 +65,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/minerva.jpg",
+            },
         },
         "is_professor": True,
     },
@@ -69,6 +81,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/remus.webp",
+            },
         },
         "is_professor": True,
     },
@@ -83,6 +98,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Sonserina",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/draco.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -96,6 +114,9 @@ USERS_DATA = [
             "city": "Grifinória",
             "state": "Sonserina",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/pansy.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -110,6 +131,9 @@ USERS_DATA = [
             "city": "Sonserina",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/snape.webp",
+            },
         },
         "is_professor": True,
     },
@@ -123,6 +147,9 @@ USERS_DATA = [
             "city": "Sonserina",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/horace.jpg",
+            },
         },
         "is_professor": True,
     },
@@ -137,6 +164,9 @@ USERS_DATA = [
             "city": "Lufa-Lufa",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/cedric.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -150,6 +180,9 @@ USERS_DATA = [
             "city": "Lufa-Lufa",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/nymphadora.webp",
+            },
         },
         "is_professor": False,
     },
@@ -164,6 +197,9 @@ USERS_DATA = [
             "city": "Lufa-Lufa",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/pomona.webp",
+            },
         },
         "is_professor": True,
     },
@@ -177,6 +213,9 @@ USERS_DATA = [
             "city": "Lufa-Lufa",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/silvanus.webp",
+            },
         },
         "is_professor": True,
     },
@@ -191,6 +230,9 @@ USERS_DATA = [
             "city": "Corvinal",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/luna.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -204,6 +246,9 @@ USERS_DATA = [
             "city": "Corvinal",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/cho.jpg",
+            },
         },
         "is_professor": False,
     },
@@ -218,6 +263,9 @@ USERS_DATA = [
             "city": "Corvinal",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/filius.jpg",
+            },
         },
         "is_professor": True,
     },
@@ -231,6 +279,9 @@ USERS_DATA = [
             "city": "Corvinal",
             "state": "Hogwarts",
             "country": "Harry Potter",
+            "avatar": {
+                "file_path": "https://tweetclone.s3.sa-east-1.amazonaws.com/default_avatares/sybill.jpg",
+            },
         },
         "is_professor": True,
     },
