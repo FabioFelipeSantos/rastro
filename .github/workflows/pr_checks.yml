@@ -170,7 +170,7 @@ jobs:
             - name: Build do projeto Vite
               run: pnpm build
 
-              - name: Instalar Apache
+            - name: Instalar Apache
               run: |
                   sudo apt-get update
                   sudo apt-get install -y apache2
@@ -183,11 +183,11 @@ jobs:
               run: |
                   # Parar o Apache temporariamente
                   sudo systemctl stop apache2
-                  
+
                   # Copiar arquivos do build para o diretório padrão do Apache
                   sudo rm -rf /var/www/html/*
                   sudo cp -r ${{ github.workspace }}/client/dist/* /var/www/html/
-                  
+
                   # Criar configuração para o site
                   sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null << 'APACHE_CONFIG'
                   <VirtualHost *:80>
@@ -226,14 +226,14 @@ jobs:
                       </Location>
                   </VirtualHost>
                   APACHE_CONFIG
-                  
+
                   # Ajustar permissões
                   sudo chown -R www-data:www-data /var/www/html
                   sudo chmod -R 755 /var/www/html
-                  
+
                   # Verificar configuração do Apache
                   sudo apache2ctl configtest
-                  
+
                   # Iniciar o Apache
                   sudo systemctl start apache2
               working-directory: ../
@@ -299,7 +299,7 @@ jobs:
             - name: Testar integração entre frontend e API
               run: |
                   echo "Verificando se o frontend está acessível..."
-                  
+
                   FRONTEND_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/)
                   FRONTEND_STATUS=$(echo "$FRONTEND_RESPONSE" | grep STATUS: | cut -d':' -f2)
 
@@ -318,14 +318,14 @@ jobs:
             - name: Testar recursos estáticos
               run: |
                   echo "Verificando se os recursos estáticos estão acessíveis..."
-                  
+
                   # Listar arquivos JavaScript e CSS no diretório /var/www/html/assets
                   echo "Arquivos em /var/www/html/assets:"
                   ls -la /var/www/html/assets/ || echo "Diretório assets não encontrado"
-                  
+
                   # Pegar o primeiro arquivo JS para teste
                   JS_FILE=$(ls /var/www/html/assets/*.js 2>/dev/null | head -n 1 | xargs basename) || echo ""
-                  
+
                   if [ -n "$JS_FILE" ]; then
                     echo "Testando acesso ao arquivo JS: $JS_FILE"
                     JS_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/assets/$JS_FILE)
@@ -339,10 +339,10 @@ jobs:
                   else
                     echo "Nenhum arquivo JS encontrado para teste"
                   fi
-                  
+
                   # Testar arquivo CSS também
                   CSS_FILE=$(ls /var/www/html/assets/*.css 2>/dev/null | head -n 1 | xargs basename) || echo ""
-                  
+
                   if [ -n "$CSS_FILE" ]; then
                     echo "Testando acesso ao arquivo CSS: $CSS_FILE"
                     CSS_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/assets/$CSS_FILE)
@@ -354,8 +354,9 @@ jobs:
                       echo "AVISO: Arquivo CSS retornou status $CSS_STATUS"
                     fi
                   fi
-                  
+
                   echo "Teste de recursos estáticos concluído!"
               working-directory: ../
+
     # PROJECT_ENV=${{ secrets.PROJECT_ENV }}
     # PORT=${{ secrets.PORT }}
