@@ -53,7 +53,9 @@ def create_users_and_profiles():
                 if bio_created:
                     print(f"Biografia para {user.nickname} criada com sucesso.")
 
-                avatar, avatar_created = Avatar.objects.get_or_create(bio=bio)
+                avatar, avatar_created = Avatar.objects.get_or_create(
+                    bio=bio, file_path=data["bio"]["avatar"]["file_path"]
+                )
 
                 if avatar_created:
                     print(f"Avatar para {user.nickname} criado com sucesso.")
@@ -267,6 +269,7 @@ def create_tweet_interactions(users_dict, tweets_dict):
     """
     Cria interações (likes, dislikes, shares) entre usuários e tweets.
     Cada usuário pode realizar cada tipo de interação apenas uma vez por tweet.
+    Um usuário não pode dar like e dislike no mesmo tweet.
     """
     print("Criando interações com os tweets (likes, dislikes, shares)")
 
@@ -364,29 +367,41 @@ def create_tweet_interactions(users_dict, tweets_dict):
             # Criar interações baseadas nas probabilidades
             interactions_made = False
 
-            # Like
+            # Like - verificar primeiro se não tem dislike
             if random.random() < like_probability:
                 try:
-                    Like.objects.create(user=user, tweet=tweet)
-                    interacted_tweets.add(tweet.id)
-                    interaction_counter[user.id] += 1
-                    interactions_made = True
-                    print(
-                        f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname}"
-                    )
+                    # Verificar se já existe dislike deste usuário neste tweet
+                    if not Dislike.objects.filter(user=user, tweet=tweet).exists():
+                        Like.objects.create(user=user, tweet=tweet)
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
+                        interactions_made = True
+                        print(
+                            f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname}"
+                        )
+                    else:
+                        print(
+                            f"⚠️ {user.nickname} já deu dislike neste tweet, não pode dar like"
+                        )
                 except Exception as e:
                     pass  # Ignora se já existe
 
-            # Dislike
+            # Dislike - verificar primeiro se não tem like
             if random.random() < dislike_probability:
                 try:
-                    Dislike.objects.create(user=user, tweet=tweet)
-                    interacted_tweets.add(tweet.id)
-                    interaction_counter[user.id] += 1
-                    interactions_made = True
-                    print(
-                        f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname}"
-                    )
+                    # Verificar se já existe like deste usuário neste tweet
+                    if not Like.objects.filter(user=user, tweet=tweet).exists():
+                        Dislike.objects.create(user=user, tweet=tweet)
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
+                        interactions_made = True
+                        print(
+                            f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname}"
+                        )
+                    else:
+                        print(
+                            f"⚠️ {user.nickname} já deu like neste tweet, não pode dar dislike"
+                        )
                 except Exception as e:
                     pass  # Ignora se já existe
 
@@ -426,23 +441,46 @@ def create_tweet_interactions(users_dict, tweets_dict):
 
             try:
                 if interaction_type == "like":
-                    Like.objects.create(user=user, tweet=tweet)
-                    print(
-                        f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname} (complemento)"
-                    )
+                    # Verificar se não existe dislike antes de criar like
+                    if not Dislike.objects.filter(user=user, tweet=tweet).exists():
+                        Like.objects.create(user=user, tweet=tweet)
+                        print(
+                            f"👍 {user.nickname} curtiu um tweet de {tweet.user.nickname} (complemento)"
+                        )
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
+                    else:
+                        # Se já existe dislike, tenta compartilhar como alternativa
+                        Share.objects.create(user=user, tweet=tweet)
+                        print(
+                            f"🔄 {user.nickname} compartilhou um tweet de {tweet.user.nickname} (alternativa ao like)"
+                        )
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
                 elif interaction_type == "dislike":
-                    Dislike.objects.create(user=user, tweet=tweet)
-                    print(
-                        f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname} (complemento)"
-                    )
+                    # Verificar se não existe like antes de criar dislike
+                    if not Like.objects.filter(user=user, tweet=tweet).exists():
+                        Dislike.objects.create(user=user, tweet=tweet)
+                        print(
+                            f"👎 {user.nickname} não curtiu um tweet de {tweet.user.nickname} (complemento)"
+                        )
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
+                    else:
+                        # Se já existe like, tenta compartilhar como alternativa
+                        Share.objects.create(user=user, tweet=tweet)
+                        print(
+                            f"🔄 {user.nickname} compartilhou um tweet de {tweet.user.nickname} (alternativa ao dislike)"
+                        )
+                        interacted_tweets.add(tweet.id)
+                        interaction_counter[user.id] += 1
                 else:  # share
                     Share.objects.create(user=user, tweet=tweet)
                     print(
                         f"🔄 {user.nickname} compartilhou um tweet de {tweet.user.nickname} (complemento)"
                     )
-
-                interacted_tweets.add(tweet.id)
-                interaction_counter[user.id] += 1
+                    interacted_tweets.add(tweet.id)
+                    interaction_counter[user.id] += 1
 
                 if interaction_counter[user.id] >= min_interactions:
                     break
