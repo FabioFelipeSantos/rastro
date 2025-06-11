@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "twitter",
     "rest_framework_simplejwt",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -136,7 +137,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -176,15 +178,66 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
 }
 
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "sa-east-1")
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_S3_FILE_OVERWRITE = False
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "tweetclone")
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+}
+AWS_DEFAULT_ACL = "public-read"
+AWS_LOCATION = "media"
 
-if not DEBUG:
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+print(f"AWS_ACCESS_KEY_ID existe: {bool(AWS_ACCESS_KEY_ID)}")
+print(f"AWS_SECRET_ACCESS_KEY existe: {bool(AWS_SECRET_ACCESS_KEY)}")
+
+if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = os.getenv("tweetclone")
-    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
+    print(f"DEFAULT_FILE_STORAGE: {DEFAULT_FILE_STORAGE}")
 else:
+    print("Aviso: Credenciais S3 não encontradas. Usando armazenamento local.")
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     MEDIA_URL = "/uploads/"
     MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
+
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "twitter": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "boto3": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "botocore": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
+}
