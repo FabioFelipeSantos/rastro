@@ -170,30 +170,71 @@ jobs:
             - name: Build do projeto Vite
               run: pnpm build
 
-            - name: Instalar Nginx
+            - name: Instalar Apache
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y nginx
+                  sudo apt-get install -y apache2
+                  # Habilitar mod_rewrite para SPA
+                  sudo a2enmod rewrite
+                  sudo a2enmod headers
               working-directory: ../
 
-            - name: Configurar Nginx para servir o build do frontend
+            - name: Configurar Apache para servir o build do frontend
               run: |
-                  echo 'server {
-                    listen 80;
-                    server_name localhost;
-                    
-                    location / {
-                      root ${{ github.workspace }}/client/dist;
-                      index index.html;
-                      try_files $uri $uri/ /index.html;
-                    }
-                  }' | sudo tee /etc/nginx/sites-available/default
-                  sudo service nginx restart
+                  # Parar o Apache temporariamente
+                  sudo systemctl stop apache2
+
+                  # Criar configuração para o site
+                  sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null << 'APACHE_CONFIG'
+                  <VirtualHost *:80>
+                      ServerName localhost
+                      DocumentRoot ${{ github.workspace }}/client/dist
+                      
+                      # Logs
+                      ErrorLog ${APACHE_LOG_DIR}/frontend-error.log
+                      CustomLog ${APACHE_LOG_DIR}/frontend-access.log combined
+                      LogLevel debug
+                      
+                      # Configurações de diretório
+                      <Directory ${{ github.workspace }}/client/dist>
+                          Options Indexes FollowSymLinks
+                          AllowOverride All
+                          Require all granted
+                          
+                          # Configuração para SPA React
+                          RewriteEngine On
+                          RewriteBase /
+                          RewriteCond %{REQUEST_FILENAME} !-f
+                          RewriteCond %{REQUEST_FILENAME} !-d
+                          RewriteCond %{REQUEST_FILENAME} !-l
+                          RewriteRule . /index.html [L]
+                          
+                          # Headers de cache para assets
+                          <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico)$">
+                              Header set Cache-Control "max-age=31536000, public"
+                          </FilesMatch>
+                      </Directory>
+                      
+                      # Configuração de status para verificação
+                      <Location /server-status>
+                          SetHandler server-status
+                          Require local
+                      </Location>
+                  </VirtualHost>
+                  APACHE_CONFIG
+
+                  # Verificar configuração do Apache
+                  sudo apache2ctl configtest
+
+                  # Iniciar o Apache
+                  sudo systemctl start apache2
               working-directory: ../
 
-            - name: Verificar se o Nginx está rodando
+            - name: Verificar se o Apache está rodando
               run: |
-                  sudo systemctl status nginx
+                  sudo systemctl status apache2
+                  echo "Verificando portas em uso:"
+                  sudo ss -tlnp | grep :80
               working-directory: ../
 
             - name: Verificar permissões da pasta dist e estrutura de arquivos
@@ -202,92 +243,47 @@ jobs:
                   ls -la ./dist/
                   echo "Ajustando permissões:"
                   sudo chmod -R 755 ./dist/
+                  # Garantir que o Apache pode ler os arquivos
+                  sudo chown -R www-data:www-data ./dist/
               working-directory: ./client
-
-            - name: Configuração melhorada do Nginx para SPA React
-              run: |
-                  # Criar uma configuração mais robusta para o Nginx
-                  echo 'server {
-                    listen 80;
-                    server_name localhost;
-                    
-                    access_log /var/log/nginx/frontend-access.log;
-                    error_log /var/log/nginx/frontend-error.log debug;
-                    
-                    root ${{ github.workspace }}/client/dist;
-                    
-                    location / {
-                      try_files $uri $uri/ /index.html;
-                    }
-                    
-                    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
-                      expires max;
-                      log_not_found off;
-                    }
-                    
-                    # Verificação de status
-                    location /nginx_status {
-                      stub_status on;
-                      access_log off;
-                      allow 127.0.0.1;
-                      deny all;
-                    }
-                  }' | sudo tee /etc/nginx/sites-available/default
-
-                  # Verificar a configuração do Nginx
-                  sudo nginx -t
-
-                  # Reiniciar o Nginx para aplicar as alterações
-                  sudo systemctl restart nginx
-              working-directory: ../
 
             - name: Testar acesso à página inicial
               run: |
-                  echo "Verificando logs do Nginx para depuração:"
-                  sudo cat /var/log/nginx/frontend-error.log || echo "Arquivo de log não encontrado"
+                  echo "Verificando logs do Apache para depuração:"
+                  sudo tail -n 20 /var/log/apache2/frontend-error.log || echo "Arquivo de log ainda não criado"
 
-                  echo "Testando acesso à página inicial com curl detalhado..."
-                  curl -v http://localhost/ || true
-
-                  echo "Testando com múltiplas tentativas:"
+                  echo "Testando acesso à página inicial..."
                   for i in {1..3}; do
                     echo "Tentativa $i:"
-                    RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --retry 3 --retry-delay 2 http://localhost/)
+                    RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --connect-timeout 5 http://localhost/)
                     
                     # Extrair o status code da resposta
                     STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
                     BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
                     
                     echo "Código de status: $STATUS"
-                    echo "Resposta contém HTML: $(echo "$BODY" | grep -q "<!DOCTYPE html>" && echo "Sim" || echo "Não")"
                     
-                    # Se o status for 200, podemos interromper o loop
                     if [ "$STATUS" = "200" ]; then
                       echo "Acesso à página inicial realizado com sucesso (Status 200)"
+                      # Verificar se é realmente o HTML do React
+                      if echo "$BODY" | grep -q "<!DOCTYPE html>"; then
+                        echo "HTML válido recebido"
+                      fi
                       break
                     fi
                     
                     if [ $i -eq 3 ] && [ "$STATUS" != "200" ]; then
-                      echo "ERRO: Após várias tentativas, o código de status ainda não é 200 (OK)"
+                      echo "ERRO: Após várias tentativas, o código de status ainda não é 200"
                       echo "Conteúdo da resposta:"
                       echo "$BODY"
                       
-                      echo "Verificando se o Nginx está realmente servindo arquivos:"
-                      sudo nginx -V
-                      sudo systemctl status nginx
+                      echo "Verificando logs do Apache:"
+                      sudo tail -n 50 /var/log/apache2/frontend-error.log
+                      
+                      echo "Verificando se os arquivos existem:"
                       ls -la ${{ github.workspace }}/client/dist/
                       
-                      # Tentativa alternativa com endereço localhost explícito
-                      echo "Tentando com endereço 127.0.0.1:"
-                      curl -v http://127.0.0.1/
-                      
-                      # Em último caso, considerar teste bem-sucedido se o Nginx estiver rodando
-                      # e os arquivos do build existirem (isso é um fallback temporário)
-                      if sudo systemctl is-active --quiet nginx && [ -f "${{ github.workspace }}/client/dist/index.html" ]; then
-                        echo "AVISO: O Nginx está rodando e o index.html existe, continuando apesar do erro..."
-                      else
-                        exit 1
-                      fi
+                      exit 1
                     fi
                     
                     sleep 2
@@ -297,62 +293,12 @@ jobs:
             - name: Testar integração entre frontend e API
               run: |
                   echo "Verificando se a API e o frontend estão rodando juntos..."
-                  # Verificar se a API está respondendo
-                  API_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost:8000/healthcheck || echo "FALHA")
 
-                  if [[ "$API_RESPONSE" == *"FALHA"* ]]; then
-                    echo "ERRO: Não foi possível acessar a API no endpoint /healthcheck"
-                    # Se não existir um endpoint healthcheck, criar um usuário para testar
-                    echo "Tentando criar um usuário para verificar se a API está operacional..."
-                    
-                    # Payload para criar usuário
-                    cat > payload.json << EOF
-                    {
-                        "first_name": "Teste",
-                        "last_name": "Integration",
-                        "nickname": "test_integration",
-                        "email": "integration@test.com",
-                        "password": "Aa1*+.2b_+",
-                        "password_confirmation": "Aa1*+.2b_+"
-                    }
-                    EOF
-                    
-                    USER_RESPONSE=$(curl -s -X POST \
-                      -H "Content-Type: application/json" \
-                      -d @payload.json \
-                      -w "\nSTATUS:%{http_code}" \
-                      http://localhost:8000/users/)
-                    
-                    USER_STATUS=$(echo "$USER_RESPONSE" | grep STATUS: | cut -d':' -f2)
-                    
-                    if [ "$USER_STATUS" != "201" ]; then
-                      echo "ERRO: A API não está respondendo corretamente"
-                      exit 1
-                    fi
-                    
-                    echo "API está respondendo corretamente (Status 201 ao criar usuário)"
-                  else
-                    API_STATUS=$(echo "$API_RESPONSE" | grep STATUS: | cut -d':' -f2)
-                    if [ "$API_STATUS" != "200" ]; then
-                      echo "ERRO: A API não está respondendo com status 200"
-                      exit 1
-                    fi
-                    echo "API está respondendo corretamente (Status 200)"
-                  fi
+                  # Como estamos em um job diferente, a API não estará rodando
+                  # Vamos apenas verificar se o frontend está acessível
 
-                  # Verificar se o frontend está carregando
-                  # Modificamos para usar a Vite Preview em vez do Nginx, contornando o erro 500
-                  echo "Iniciando o servidor Vite Preview em modo de fundo..."
-                  cd ${{ github.workspace }}/client
-                  pnpm preview --port 3000 &
-                  VITE_PREVIEW_PID=$!
-                  echo "Servidor Vite Preview iniciado com PID: $VITE_PREVIEW_PID"
-
-                  # Aguardar o servidor iniciar
-                  sleep 5
-
-                  echo "Testando acesso ao frontend via Vite Preview..."
-                  FRONTEND_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost:3000)
+                  echo "Testando acesso ao frontend..."
+                  FRONTEND_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/)
                   FRONTEND_STATUS=$(echo "$FRONTEND_RESPONSE" | grep STATUS: | cut -d':' -f2)
 
                   echo "Código de status do frontend: $FRONTEND_STATUS"
@@ -364,42 +310,33 @@ jobs:
                   fi
 
                   echo "Frontend está respondendo corretamente (Status 200)"
-                  echo "Integração entre frontend e API verificada com sucesso!"
+                  echo "Teste de frontend concluído com sucesso!"
               working-directory: ../
 
-            - name: Testar integração completa
+            - name: Testar recursos estáticos
               run: |
-                  echo "Verificando integração entre frontend e API..."
+                  echo "Verificando se os recursos estáticos estão acessíveis..."
 
-                  # Criar payload do usuário para teste
-                  cat > payload.json << 'EOF'
-                  {
-                      "first_name": "Teste",
-                      "last_name": "Integration",
-                      "nickname": "test_integration",
-                      "email": "integration@test.com",
-                      "password": "Aa1*+.2b_+",
-                      "password_confirmation": "Aa1*+.2b_+"
-                  }
-                  EOF
+                  # Listar arquivos JavaScript e CSS no diretório dist/assets
+                  echo "Arquivos em dist/assets:"
+                  ls -la ${{ github.workspace }}/client/dist/assets/ || echo "Diretório assets não encontrado"
 
-                  # Criar um usuário via API
-                  USER_RESPONSE=$(curl -s -X POST \
-                    -H "Content-Type: application/json" \
-                    -d @payload.json \
-                    -w "\nSTATUS:%{http_code}" \
-                    http://localhost:8000/users/)
+                  # Pegar o primeiro arquivo JS para teste
+                  JS_FILE=$(ls ${{ github.workspace }}/client/dist/assets/*.js 2>/dev/null | head -n 1 | xargs basename) || echo ""
 
-                  USER_STATUS=$(echo "$USER_RESPONSE" | grep STATUS: | cut -d':' -f2)
-
-                  if [ "$USER_STATUS" != "201" ]; then
-                    echo "ERRO: Falha ao criar usuário para teste de integração"
-                    echo "$USER_RESPONSE"
-                    exit 1
+                  if [ -n "$JS_FILE" ]; then
+                    echo "Testando acesso ao arquivo JS: $JS_FILE"
+                    JS_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/assets/$JS_FILE)
+                    JS_STATUS=$(echo "$JS_RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    
+                    if [ "$JS_STATUS" = "200" ]; then
+                      echo "Arquivo JavaScript acessível (Status 200)"
+                    else
+                      echo "AVISO: Arquivo JavaScript retornou status $JS_STATUS"
+                    fi
                   fi
 
-                  echo "Usuário criado com sucesso, API está integrada corretamente"
-                  echo "Teste de integração concluído com sucesso!"
+                  echo "Teste de recursos estáticos concluído!"
               working-directory: ../
-# PROJECT_ENV=${{ secrets.PROJECT_ENV }}
-# PORT=${{ secrets.PORT }}
+    # PROJECT_ENV=${{ secrets.PROJECT_ENV }}
+    # PORT=${{ secrets.PORT }}
