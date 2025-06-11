@@ -333,7 +333,9 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
               return (
                 <S.ActionButton
                   key={tweetAction.action}
-                  disabled={isSendingAction || userBio?.user?.id === tweet.user.id}
+                  disabled={
+                    isSendingAction || (userBio?.user?.id === tweet.user.id && !(tweetAction.action === "retweet"))
+                  }
                   onClick={() => handleTweetAction(tweet.id, tweetAction.action)}
                   $isReacted={tweetAction.reacted}
                   $isRetweetButton={tweetAction.isRetweetButton}

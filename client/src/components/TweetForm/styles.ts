@@ -9,8 +9,14 @@ export const TweetFormContainer = styled.div`
 export const AvatarImageSmall = styled.img`
   width: 48px;
   height: 48px;
+  object-fit: cover;
+  object-position: center;
   border-radius: 50%;
   margin-right: ${({ theme }) => theme.spacing(1.5)};
+
+  &:hover {
+    cursor: pointer;
+  }
 `;
 
 export const FormContent = styled.div`
@@ -21,6 +27,7 @@ export const FormContent = styled.div`
 
     .text-area-container {
       width: 90%;
+      margin-right: 8px;
     }
   }
 `;

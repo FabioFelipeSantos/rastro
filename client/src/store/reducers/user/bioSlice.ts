@@ -15,6 +15,8 @@ const initialState: UserBioAvatar = {
     id: "",
     first_name: "",
     last_name: "",
+    nickname: "",
+    avatar_url: "",
     following_count: 0,
     follower_count: 0,
   },

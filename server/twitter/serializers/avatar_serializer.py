@@ -27,7 +27,7 @@ class AvatarUploadSerializer(serializers.Serializer):
         required=True,
         error_messages={
             "required": "Nenhum arquivo enviado.",
-            "invalid": "Arquivo inválido. Envie uma imagem no formato PNG ou JPG/JPEG.",
+            "invalid": "Arquivo inválido. Envie uma imagem no formato PNG, JPG/JPEG ou WEBP.",
             "empty": "O arquivo enviado está vazio.",
         },
     )
@@ -41,9 +41,9 @@ class AvatarUploadSerializer(serializers.Serializer):
             )
 
         content_type = file.content_type.lower()
-        if content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+        if content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
             raise serializers.ValidationError(
-                "Apenas arquivos JPEG, JPG ou PNG são permitidos."
+                "Apenas arquivos JPEG, JPG, PNG ou WEBP são permitidos."
             )
 
         return file

@@ -1,137 +1,362 @@
 name: Pull Request Checks
 
 on:
-  pull_request:
-    branches: [ main ]
+    pull_request:
+        branches: [main]
 
 jobs:
-  test-api:
-    runs-on: ubuntu-latest
+    test-api:
+        runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./server
+        defaults:
+            run:
+                working-directory: ./server
 
-    steps:
-    - name: Checkout do código
-      uses: actions/checkout@v4
+        steps:
+            - name: Checkout do código
+              uses: actions/checkout@v4
 
-    - name: Configurando o Python 3.13
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
+            - name: Configurando o Python 3.13
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
 
-    - name: Verificar versão do Python
-      run: |
-        PYTHON_VERSION=$(python --version)
-        echo "Versão do Python em uso: $PYTHON_VERSION"
+            - name: Verificar versão do Python
+              run: |
+                  PYTHON_VERSION=$(python --version)
+                  echo "Versão do Python em uso: $PYTHON_VERSION"
 
-    - name: Instalar Poetry 2.1.2
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            - name: Instalar Poetry 2.1.2
+              run: |
+                  curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
+                  echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-    - name: Verificar versão do Poetry
-      run: |
-        POETRY_VERSION=$(poetry --version)
-        echo "Versão do Poetry em uso: $POETRY_VERSION"
+            - name: Verificar versão do Poetry
+              run: |
+                  POETRY_VERSION=$(poetry --version)
+                  echo "Versão do Poetry em uso: $POETRY_VERSION"
 
-    - name: Configurar Poetry para não criar ambientes virtuais
-      run: poetry config virtualenvs.create false
+            - name: Configurar Poetry para não criar ambientes virtuais
+              run: poetry config virtualenvs.create false
 
-    - name: Instalar dependências
-      run: poetry install --no-interaction --no-root
+            - name: Instalar dependências
+              run: poetry install --no-interaction --no-root
 
-    - name: Configurar arquivo.env
-      run: |
-        cat > .env << EOF
-        POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
-        POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-        POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
-        PROJECT_ENV=${{ secrets.PROJECT_ENV }}
-        PORT=${{ secrets.PORT }}
-        EOF
+            - name: Configurar arquivo.env
+              run: |
+                  cat > .env << EOF
+                  POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+                  POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+                  POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                  POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                  POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                  POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
+                  EOF
 
-    - name: Configurar docker
-      uses: docker/setup-buildx-action@v3
+            - name: Configurar docker
+              uses: docker/setup-buildx-action@v3
 
-    - name: Iniciar containers Docker
-      run: docker compose up -d
+            - name: Iniciar containers Docker
+              run: docker compose up -d
 
-    - name: Aguardar inicialização do PostgreSQL
-      run: |
-        echo "Aguardando inicialização do PostgreSQL"
-        sleep 10
-        docker ps
+            - name: Aguardar inicialização do PostgreSQL
+              run: |
+                  echo "Aguardando inicialização do PostgreSQL"
+                  sleep 10
+                  docker ps
 
-    - name: Executar migrations
-      run: |
-        echo "Rodando migrations"
-        poetry run python manage.py makemigrations
-        poetry run python manage.py migrate
-        echo "Migrações executadas com sucesso"
+            - name: Executar migrations
+              run: |
+                  echo "Rodando migrations"
+                  poetry run python manage.py makemigrations
+                  poetry run python manage.py migrate
+                  echo "Migrações executadas com sucesso"
 
-    - name: Executar testes
-      run: |
-        echo "Preparando banco de dados de teste..."
-        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
-        echo "Executando testes unitários e de integração"
-        poetry run pytest -v --cov --cov-branch --cov-report=xml
-        if [ $? -ne 0 ]; then
-          echo "ERRO: Os testes falharam!"
-          exit 1
-        fi
-        echo "Todos os testes foram executados com sucesso"
+            - name: Executar testes
+              run: |
+                  echo "Preparando banco de dados de teste..."
+                  PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
+                  echo "Executando testes unitários e de integração"
+                  poetry run pytest -v --cov --cov-branch --cov-report=xml
+                  if [ $? -ne 0 ]; then
+                    echo "ERRO: Os testes falharam!"
+                    exit 1
+                  fi
+                  echo "Todos os testes foram executados com sucesso"
 
-    - name: Upload cobertura de código
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage.xml
+            - name: Upload cobertura de código
+              uses: codecov/codecov-action@v5
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  files: ./coverage.xml
 
-    - name: Iniciar API em segundo plano
-      run: |
-        poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
-        sleep 10
+            - name: Iniciar API em segundo plano
+              run: |
+                  poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
+                  sleep 10
 
-    - name: Testar criação de usuário
-      run: |
-        echo "Testando criação de usuário via POST..."
-        
-        # Salvar o payload em um arquivo temporário
-        cat > payload.json << EOF
-        {
-            "first_name": "Teste",
-            "last_name": "GH Actions",
-            "nickname": "test_gh",
-            "email": "test@gh.com",
-            "password": "Aa1*+.",
-            "password_confirmation": "Aa1*+."
-        }
-        EOF
-        
-        # Fazer a requisição POST e salvar o resultado
-        RESPONSE=$(curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -d @payload.json \
-          -w "\nSTATUS:%{http_code}" \
-          http://localhost:8000/users/)
-        
-        # Extrair o status code da resposta
-        STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
-        BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
-        
-        echo "Código de status: $STATUS"
-        echo "Resposta da API:"
-        echo "$BODY" | jq . || echo "$BODY"
-        
-        # Verificar se o status é 201 (Created)
-        if [ "$STATUS" != "201" ]; then
-          echo "ERRO: O código de status não é 201 (Created)"
-          exit 1
-        fi
-        
-        echo "Criação de usuário realizada com sucesso (Status 201)"
+            - name: Testar criação de usuário
+              run: |
+                  echo "Testando criação de usuário via POST..."
+
+                  # Salvar o payload em um arquivo temporário
+                  cat > payload.json << EOF
+                  {
+                      "first_name": "Teste",
+                      "last_name": "GH Actions",
+                      "nickname": "test_gh",
+                      "email": "test@gh.com",
+                      "password": "Aa1*+.",
+                      "password_confirmation": "Aa1*+."
+                  }
+                  EOF
+
+                  # Fazer a requisição POST e salvar o resultado
+                  RESPONSE=$(curl -s -X POST \
+                    -H "Content-Type: application/json" \
+                    -d @payload.json \
+                    -w "\nSTATUS:%{http_code}" \
+                    http://localhost:8000/users/)
+
+                  # Extrair o status code da resposta
+                  STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                  BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+
+                  echo "Código de status: $STATUS"
+                  echo "Resposta da API:"
+                  echo "$BODY" | jq . || echo "$BODY"
+
+                  # Verificar se o status é 201 (Created)
+                  if [ "$STATUS" != "201" ]; then
+                    echo "ERRO: O código de status não é 201 (Created)"
+                    exit 1
+                  fi
+
+                  echo "Criação de usuário realizada com sucesso (Status 201)"
+
+    test-client:
+        runs-on: ubuntu-latest
+        needs: test-api
+
+        defaults:
+            run:
+                working-directory: ./client
+
+        steps:
+            - name: Checkout do código
+              uses: actions/checkout@v4
+
+            - name: Configurar Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "latest"
+
+            - name: Instalar e configurar pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: latest
+                  run_install: false
+
+            - name: Verificar versões
+              run: |
+                  NODE_VERSION=$(node --version)
+                  PNPM_VERSION=$(pnpm --version)
+                  echo "Versão do Node.js em uso: $NODE_VERSION"
+                  echo "Versão do pnpm em uso: $PNPM_VERSION"
+
+            - name: Instalar dependências
+              run: pnpm install
+
+            - name: Build do projeto Vite
+              run: pnpm build
+
+            - name: Instalar Apache
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y apache2
+                  # Habilitar mod_rewrite para SPA
+                  sudo a2enmod rewrite
+                  sudo a2enmod headers
+              working-directory: ../
+
+            - name: Configurar Apache para servir o build do frontend
+              run: |
+                  # Parar o Apache temporariamente
+                  sudo systemctl stop apache2
+
+                  # Copiar arquivos do build para o diretório padrão do Apache
+                  sudo rm -rf /var/www/html/*
+                  sudo cp -r ${{ github.workspace }}/client/dist/* /var/www/html/
+
+                  # Criar configuração para o site
+                  sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null << 'APACHE_CONFIG'
+                  <VirtualHost *:80>
+                      ServerName localhost
+                      DocumentRoot /var/www/html
+                      
+                      # Logs
+                      ErrorLog ${APACHE_LOG_DIR}/frontend-error.log
+                      CustomLog ${APACHE_LOG_DIR}/frontend-access.log combined
+                      LogLevel debug
+                      
+                      # Configurações de diretório
+                      <Directory /var/www/html>
+                          Options Indexes FollowSymLinks
+                          AllowOverride All
+                          Require all granted
+                          
+                          # Configuração para SPA React
+                          RewriteEngine On
+                          RewriteBase /
+                          RewriteCond %{REQUEST_FILENAME} !-f
+                          RewriteCond %{REQUEST_FILENAME} !-d
+                          RewriteCond %{REQUEST_FILENAME} !-l
+                          RewriteRule . /index.html [L]
+                          
+                          # Headers de cache para assets
+                          <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico)$">
+                              Header set Cache-Control "max-age=31536000, public"
+                          </FilesMatch>
+                      </Directory>
+                      
+                      # Configuração de status para verificação
+                      <Location /server-status>
+                          SetHandler server-status
+                          Require local
+                      </Location>
+                  </VirtualHost>
+                  APACHE_CONFIG
+
+                  # Ajustar permissões
+                  sudo chown -R www-data:www-data /var/www/html
+                  sudo chmod -R 755 /var/www/html
+
+                  # Verificar configuração do Apache
+                  sudo apache2ctl configtest
+
+                  # Iniciar o Apache
+                  sudo systemctl start apache2
+              working-directory: ../
+
+            - name: Verificar se o Apache está rodando
+              run: |
+                  sudo systemctl status apache2
+                  echo "Verificando portas em uso:"
+                  sudo ss -tlnp | grep :80
+              working-directory: ../
+
+            - name: Verificar estrutura de arquivos no Apache
+              run: |
+                  echo "Conteúdo do diretório /var/www/html:"
+                  ls -la /var/www/html/
+                  echo "Verificando se index.html existe:"
+                  cat /var/www/html/index.html | head -n 10
+              working-directory: ../
+
+            - name: Testar acesso à página inicial
+              run: |
+                  echo "Verificando logs do Apache para depuração:"
+                  sudo tail -n 20 /var/log/apache2/frontend-error.log || echo "Arquivo de log ainda não criado"
+
+                  echo "Testando acesso à página inicial..."
+                  for i in {1..3}; do
+                    echo "Tentativa $i:"
+                    RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --connect-timeout 5 http://localhost/)
+                    
+                    # Extrair o status code da resposta
+                    STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+                    
+                    echo "Código de status: $STATUS"
+                    
+                    if [ "$STATUS" = "200" ]; then
+                      echo "Acesso à página inicial realizado com sucesso (Status 200)"
+                      # Verificar se é realmente o HTML do React
+                      if echo "$BODY" | grep -q "<!DOCTYPE html>"; then
+                        echo "HTML válido recebido"
+                        echo "Primeiras linhas do HTML:"
+                        echo "$BODY" | head -n 5
+                      fi
+                      break
+                    fi
+                    
+                    if [ $i -eq 3 ] && [ "$STATUS" != "200" ]; then
+                      echo "ERRO: Após várias tentativas, o código de status ainda não é 200"
+                      echo "Conteúdo da resposta:"
+                      echo "$BODY"
+                      
+                      echo "Verificando logs do Apache:"
+                      sudo tail -n 50 /var/log/apache2/frontend-error.log
+                      sudo tail -n 50 /var/log/apache2/error.log
+                      
+                      exit 1
+                    fi
+                    
+                    sleep 2
+                  done
+              working-directory: ../
+
+            - name: Testar integração entre frontend e API
+              run: |
+                  echo "Verificando se o frontend está acessível..."
+
+                  FRONTEND_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/)
+                  FRONTEND_STATUS=$(echo "$FRONTEND_RESPONSE" | grep STATUS: | cut -d':' -f2)
+
+                  echo "Código de status do frontend: $FRONTEND_STATUS"
+                  if [ "$FRONTEND_STATUS" != "200" ]; then
+                    echo "ERRO: O frontend não está respondendo com status 200"
+                    echo "Resposta completa:"
+                    echo "$FRONTEND_RESPONSE"
+                    exit 1
+                  fi
+
+                  echo "Frontend está respondendo corretamente (Status 200)"
+                  echo "Teste de frontend concluído com sucesso!"
+              working-directory: ../
+
+            - name: Testar recursos estáticos
+              run: |
+                  echo "Verificando se os recursos estáticos estão acessíveis..."
+
+                  # Listar arquivos JavaScript e CSS no diretório /var/www/html/assets
+                  echo "Arquivos em /var/www/html/assets:"
+                  ls -la /var/www/html/assets/ || echo "Diretório assets não encontrado"
+
+                  # Pegar o primeiro arquivo JS para teste
+                  JS_FILE=$(ls /var/www/html/assets/*.js 2>/dev/null | head -n 1 | xargs basename) || echo ""
+
+                  if [ -n "$JS_FILE" ]; then
+                    echo "Testando acesso ao arquivo JS: $JS_FILE"
+                    JS_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/assets/$JS_FILE)
+                    JS_STATUS=$(echo "$JS_RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    
+                    if [ "$JS_STATUS" = "200" ]; then
+                      echo "Arquivo JavaScript acessível (Status 200)"
+                    else
+                      echo "AVISO: Arquivo JavaScript retornou status $JS_STATUS"
+                    fi
+                  else
+                    echo "Nenhum arquivo JS encontrado para teste"
+                  fi
+
+                  # Testar arquivo CSS também
+                  CSS_FILE=$(ls /var/www/html/assets/*.css 2>/dev/null | head -n 1 | xargs basename) || echo ""
+
+                  if [ -n "$CSS_FILE" ]; then
+                    echo "Testando acesso ao arquivo CSS: $CSS_FILE"
+                    CSS_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost/assets/$CSS_FILE)
+                    CSS_STATUS=$(echo "$CSS_RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    
+                    if [ "$CSS_STATUS" = "200" ]; then
+                      echo "Arquivo CSS acessível (Status 200)"
+                    else
+                      echo "AVISO: Arquivo CSS retornou status $CSS_STATUS"
+                    fi
+                  fi
+
+                  echo "Teste de recursos estáticos concluído!"
+              working-directory: ../
+
+    # PROJECT_ENV=${{ secrets.PROJECT_ENV }}
+    # PORT=${{ secrets.PORT }}

@@ -1,7 +1,4 @@
 from rest_framework.utils.encoders import JSONEncoder
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class SafeJSONEncoder(JSONEncoder):
@@ -19,7 +16,6 @@ class SafeJSONEncoder(JSONEncoder):
         try:
             return super().encode(obj)
         except Exception as e:
-            logger.error(f"Erro ao codificar JSON: {e}")
             return '{"error": "Erro ao serializar resposta", "message": "Um erro ocorreu durante a serialização"}'
 
     def default(self, obj):
