@@ -1,137 +1,285 @@
 name: Pull Request Checks
 
 on:
-  pull_request:
-    branches: [ main ]
+    pull_request:
+        branches: [main]
 
 jobs:
-  test-api:
-    runs-on: ubuntu-latest
+    test-api:
+        runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./server
+        defaults:
+            run:
+                working-directory: ./server
 
-    steps:
-    - name: Checkout do código
-      uses: actions/checkout@v4
+        steps:
+            - name: Checkout do código
+              uses: actions/checkout@v4
 
-    - name: Configurando o Python 3.13
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
+            - name: Configurando o Python 3.13
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
 
-    - name: Verificar versão do Python
-      run: |
-        PYTHON_VERSION=$(python --version)
-        echo "Versão do Python em uso: $PYTHON_VERSION"
+            - name: Verificar versão do Python
+              run: |
+                  PYTHON_VERSION=$(python --version)
+                  echo "Versão do Python em uso: $PYTHON_VERSION"
 
-    - name: Instalar Poetry 2.1.2
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            - name: Instalar Poetry 2.1.2
+              run: |
+                  curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
+                  echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-    - name: Verificar versão do Poetry
-      run: |
-        POETRY_VERSION=$(poetry --version)
-        echo "Versão do Poetry em uso: $POETRY_VERSION"
+            - name: Verificar versão do Poetry
+              run: |
+                  POETRY_VERSION=$(poetry --version)
+                  echo "Versão do Poetry em uso: $POETRY_VERSION"
 
-    - name: Configurar Poetry para não criar ambientes virtuais
-      run: poetry config virtualenvs.create false
+            - name: Configurar Poetry para não criar ambientes virtuais
+              run: poetry config virtualenvs.create false
 
-    - name: Instalar dependências
-      run: poetry install --no-interaction --no-root
+            - name: Instalar dependências
+              run: poetry install --no-interaction --no-root
 
-    - name: Configurar arquivo.env
-      run: |
-        cat > .env << EOF
-        POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
-        POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-        POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
-        PROJECT_ENV=${{ secrets.PROJECT_ENV }}
-        PORT=${{ secrets.PORT }}
-        EOF
+            - name: Configurar arquivo.env
+              run: |
+                  cat > .env << EOF
+                  POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+                  POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+                  POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                  POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                  POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                  POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
+                  PROJECT_ENV=${{ secrets.PROJECT_ENV }}
+                  PORT=${{ secrets.PORT }}
+                  EOF
 
-    - name: Configurar docker
-      uses: docker/setup-buildx-action@v3
+            - name: Configurar docker
+              uses: docker/setup-buildx-action@v3
 
-    - name: Iniciar containers Docker
-      run: docker compose up -d
+            - name: Iniciar containers Docker
+              run: docker compose up -d
 
-    - name: Aguardar inicialização do PostgreSQL
-      run: |
-        echo "Aguardando inicialização do PostgreSQL"
-        sleep 10
-        docker ps
+            - name: Aguardar inicialização do PostgreSQL
+              run: |
+                  echo "Aguardando inicialização do PostgreSQL"
+                  sleep 10
+                  docker ps
 
-    - name: Executar migrations
-      run: |
-        echo "Rodando migrations"
-        poetry run python manage.py makemigrations
-        poetry run python manage.py migrate
-        echo "Migrações executadas com sucesso"
+            - name: Executar migrations
+              run: |
+                  echo "Rodando migrations"
+                  poetry run python manage.py makemigrations
+                  poetry run python manage.py migrate
+                  echo "Migrações executadas com sucesso"
 
-    - name: Executar testes
-      run: |
-        echo "Preparando banco de dados de teste..."
-        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
-        echo "Executando testes unitários e de integração"
-        poetry run pytest -v --cov --cov-branch --cov-report=xml
-        if [ $? -ne 0 ]; then
-          echo "ERRO: Os testes falharam!"
-          exit 1
-        fi
-        echo "Todos os testes foram executados com sucesso"
+            - name: Executar testes
+              run: |
+                  echo "Preparando banco de dados de teste..."
+                  PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h ${{ secrets.POSTGRES_HOST }} -U ${{ secrets.POSTGRES_USER }} -c "CREATE DATABASE ${{ secrets.POSTGRES_DB_TEST }} WITH OWNER ${{ secrets.POSTGRES_USER }}" || true
+                  echo "Executando testes unitários e de integração"
+                  poetry run pytest -v --cov --cov-branch --cov-report=xml
+                  if [ $? -ne 0 ]; then
+                    echo "ERRO: Os testes falharam!"
+                    exit 1
+                  fi
+                  echo "Todos os testes foram executados com sucesso"
 
-    - name: Upload cobertura de código
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage.xml
+            - name: Upload cobertura de código
+              uses: codecov/codecov-action@v5
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  files: ./coverage.xml
 
-    - name: Iniciar API em segundo plano
-      run: |
-        poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
-        sleep 10
+            - name: Iniciar API em segundo plano
+              run: |
+                  poetry run python manage.py runserver & echo "Aguardando a API inicializar ..."
+                  sleep 10
 
-    - name: Testar criação de usuário
-      run: |
-        echo "Testando criação de usuário via POST..."
-        
-        # Salvar o payload em um arquivo temporário
-        cat > payload.json << EOF
-        {
-            "first_name": "Teste",
-            "last_name": "GH Actions",
-            "nickname": "test_gh",
-            "email": "test@gh.com",
-            "password": "Aa1*+.",
-            "password_confirmation": "Aa1*+."
-        }
-        EOF
-        
-        # Fazer a requisição POST e salvar o resultado
-        RESPONSE=$(curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -d @payload.json \
-          -w "\nSTATUS:%{http_code}" \
-          http://localhost:8000/users/)
-        
-        # Extrair o status code da resposta
-        STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
-        BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
-        
-        echo "Código de status: $STATUS"
-        echo "Resposta da API:"
-        echo "$BODY" | jq . || echo "$BODY"
-        
-        # Verificar se o status é 201 (Created)
-        if [ "$STATUS" != "201" ]; then
-          echo "ERRO: O código de status não é 201 (Created)"
-          exit 1
-        fi
-        
-        echo "Criação de usuário realizada com sucesso (Status 201)"
+            - name: Testar criação de usuário
+              run: |
+                  echo "Testando criação de usuário via POST..."
+
+                  # Salvar o payload em um arquivo temporário
+                  cat > payload.json << EOF
+                  {
+                      "first_name": "Teste",
+                      "last_name": "GH Actions",
+                      "nickname": "test_gh",
+                      "email": "test@gh.com",
+                      "password": "Aa1*+.",
+                      "password_confirmation": "Aa1*+."
+                  }
+                  EOF
+
+                  # Fazer a requisição POST e salvar o resultado
+                  RESPONSE=$(curl -s -X POST \
+                    -H "Content-Type: application/json" \
+                    -d @payload.json \
+                    -w "\nSTATUS:%{http_code}" \
+                    http://localhost:8000/users/)
+
+                  # Extrair o status code da resposta
+                  STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                  BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+
+                  echo "Código de status: $STATUS"
+                  echo "Resposta da API:"
+                  echo "$BODY" | jq . || echo "$BODY"
+
+                  # Verificar se o status é 201 (Created)
+                  if [ "$STATUS" != "201" ]; then
+                    echo "ERRO: O código de status não é 201 (Created)"
+                    exit 1
+                  fi
+
+                  echo "Criação de usuário realizada com sucesso (Status 201)"
+
+    test-client:
+        runs-on: ubuntu-latest
+        needs: test-api
+
+        defaults:
+            run:
+                working-directory: ./client
+
+        steps:
+            - name: Checkout do código
+              uses: actions/checkout@v4
+
+            - name: Configurar Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "latest"
+
+            - name: Instalar e configurar pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: latest
+                  run_install: false
+
+            - name: Verificar versões
+              run: |
+                  NODE_VERSION=$(node --version)
+                  PNPM_VERSION=$(pnpm --version)
+                  echo "Versão do Node.js em uso: $NODE_VERSION"
+                  echo "Versão do pnpm em uso: $PNPM_VERSION"
+
+            - name: Instalar dependências
+              run: pnpm install
+
+            - name: Build do projeto Vite
+              run: pnpm build
+
+            - name: Instalar Nginx
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y nginx
+              working-directory: ../
+
+            - name: Configurar Nginx para servir o build do frontend
+              run: |
+                  echo 'server {
+                    listen 80;
+                    server_name localhost;
+                    
+                    location / {
+                      root ${{ github.workspace }}/client/dist;
+                      index index.html;
+                      try_files $uri $uri/ /index.html;
+                    }
+                  }' | sudo tee /etc/nginx/sites-available/default
+                  sudo service nginx restart
+              working-directory: ../
+
+            - name: Verificar se o Nginx está rodando
+              run: |
+                  sudo systemctl status nginx
+              working-directory: ../
+
+            - name: Testar acesso à página inicial
+              run: |
+                  echo "Testando acesso à página inicial..."
+                  RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost)
+
+                  # Extrair o status code da resposta
+                  STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                  BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+
+                  echo "Código de status: $STATUS"
+                  echo "Resposta contém HTML: $(echo "$BODY" | grep -q "<!DOCTYPE html>" && echo "Sim" || echo "Não")"
+
+                  # Verificar se o status é 200
+                  if [ "$STATUS" != "200" ]; then
+                    echo "ERRO: O código de status não é 200 (OK)"
+                    exit 1
+                  fi
+
+                  # Verificar se a resposta contém HTML
+                  if ! echo "$BODY" | grep -q "<!DOCTYPE html>"; then
+                    echo "ERRO: A resposta não contém HTML"
+                    exit 1
+                  fi
+
+                  echo "Acesso à página inicial realizado com sucesso (Status 200)"
+              working-directory: ../
+
+            - name: Testar integração entre frontend e API
+              run: |
+                  echo "Verificando se a API e o frontend estão rodando juntos..."
+                  # Verificar se a API está respondendo
+                  API_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost:8000/healthcheck || echo "FALHA")
+
+                  if [[ "$API_RESPONSE" == *"FALHA"* ]]; then
+                    echo "ERRO: Não foi possível acessar a API no endpoint /healthcheck"
+                    # Se não existir um endpoint healthcheck, criar um usuário para testar
+                    echo "Tentando criar um usuário para verificar se a API está operacional..."
+                    
+                    # Payload para criar usuário
+                    cat > payload.json << EOF
+                    {
+                        "first_name": "Teste",
+                        "last_name": "Integration",
+                        "nickname": "test_integration",
+                        "email": "integration@test.com",
+                        "password": "Aa1*+.2b_+",
+                        "password_confirmation": "Aa1*+.2b_+"
+                    }
+                    EOF
+                    
+                    USER_RESPONSE=$(curl -s -X POST \
+                      -H "Content-Type: application/json" \
+                      -d @payload.json \
+                      -w "\nSTATUS:%{http_code}" \
+                      http://localhost:8000/users/)
+                    
+                    USER_STATUS=$(echo "$USER_RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    
+                    if [ "$USER_STATUS" != "201" ]; then
+                      echo "ERRO: A API não está respondendo corretamente"
+                      exit 1
+                    fi
+                    
+                    echo "API está respondendo corretamente (Status 201 ao criar usuário)"
+                  else
+                    API_STATUS=$(echo "$API_RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    if [ "$API_STATUS" != "200" ]; then
+                      echo "ERRO: A API não está respondendo com status 200"
+                      exit 1
+                    fi
+                    echo "API está respondendo corretamente (Status 200)"
+                  fi
+
+                  # Verificar se o frontend está carregando
+                  FRONTEND_RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" http://localhost)
+                  FRONTEND_STATUS=$(echo "$FRONTEND_RESPONSE" | grep STATUS: | cut -d':' -f2)
+
+                  if [ "$FRONTEND_STATUS" != "200" ]; then
+                    echo "ERRO: O frontend não está respondendo com status 200"
+                    exit 1
+                  fi
+
+                  echo "Frontend está respondendo corretamente (Status 200)"
+                  echo "Integração entre frontend e API verificada com sucesso!"
+              working-directory: ../
