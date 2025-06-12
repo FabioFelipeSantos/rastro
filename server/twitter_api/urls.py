@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("", include("twitter.urls")),
+    path("auth/", include("twitter.urls.auth_urls")),
 ]
 
 if settings.DEBUG:
