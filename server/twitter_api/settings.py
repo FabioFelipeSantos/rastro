@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import dj_database_url
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -32,9 +33,9 @@ if not SECRET_KEY:
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["0.0.0.0", "localhost", "http://localhost:5173"]
+ALLOWED_HOSTS = ["0.0.0.0", "localhost", "http://localhost:5173", ".onrender.com"]
 
 APPEND_SLASH = True
 
@@ -103,6 +104,19 @@ DATABASES = {
     }
 }
 
+if os.getenv("DATABASE_URL"):
+    DATABASES["default"] = dj_database_url.parse(
+        os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+    )
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
