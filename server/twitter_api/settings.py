@@ -118,6 +118,10 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "SAMEORIGIN"
 
+CORS_ALLOWED_ORIGINS = [
+    "https://rastro-twitterclone.onrender.com",
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
