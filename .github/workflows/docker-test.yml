@@ -49,44 +49,44 @@ jobs:
                   echo "Verificando os containers..."
                   docker ps -a
 
-                  - name: Testar acesso à página inicial
-                  run: |
-                      echo "Verificando logs do Apache para depuração:"
-                      sudo tail -n 20 /var/log/apache2/frontend-error.log || echo "Arquivo de log ainda não criado"
+            - name: Testar acesso à página inicial
+              run: |
+                  echo "Verificando logs do Apache para depuração:"
+                  sudo tail -n 20 /var/log/apache2/frontend-error.log || echo "Arquivo de log ainda nãocriado"
 
-                      echo "Testando acesso à página inicial..."
-                      for i in {1..3}; do
-                        echo "Tentativa $i:"
-                        RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --connect-timeout 5 http://localhost/)
-                        
-                        # Extrair o status code da resposta
-                        STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
-                        BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
-                        
-                        echo "Código de status: $STATUS"
-                        
-                        if [ "$STATUS" = "200" ]; then
-                          echo "Acesso à página inicial realizado com sucesso (Status 200)"
-                          # Verificar se é realmente o HTML do React
-                          if echo "$BODY" | grep -q "<!DOCTYPE html>"; then
-                            echo "HTML válido recebido"
-                            echo "Primeiras linhas do HTML:"
-                            echo "$BODY" | head -n 5
-                          fi
-                          break
-                        fi
-                        
-                        if [ $i -eq 3 ] && [ "$STATUS" != "200" ]; then
-                          echo "ERRO: Após várias tentativas, o código de status ainda não é 200"
-                          echo "Conteúdo da resposta:"
-                          echo "$BODY"
-                          
-                          echo "Verificando logs do Apache:"
-                          sudo tail -n 50 /var/log/apache2/frontend-error.log
-                          sudo tail -n 50 /var/log/apache2/error.log
-                          
-                          exit 1
-                        fi
-                        
-                        sleep 2
-                      done
+                  echo "Testando acesso à página inicial..."
+                  for i in {1..3}; do
+                    echo "Tentativa $i:"
+                    RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --connect-timeout 5 http://localhost/)
+                    
+                    # Extrair o status code da resposta
+                    STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                    BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+                    
+                    echo "Código de status: $STATUS"
+                    
+                    if [ "$STATUS" = "200" ]; then
+                      echo "Acesso à página inicial realizado com sucesso (Status 200)"
+                      # Verificar se é realmente o HTML do React
+                      if echo "$BODY" | grep -q "<!DOCTYPE html>"; then
+                        echo "HTML válido recebido"
+                        echo "Primeiras linhas do HTML:"
+                        echo "$BODY" | head -n 5
+                      fi
+                      break
+                    fi
+                    
+                    if [ $i -eq 3 ] && [ "$STATUS" != "200" ]; then
+                      echo "ERRO: Após várias tentativas, o código de status ainda não é 200"
+                      echo "Conteúdo da resposta:"
+                      echo "$BODY"
+                      
+                      echo "Verificando logs do Apache:"
+                      sudo tail -n 50 /var/log/apache2/frontend-error.log
+                      sudo tail -n 50 /var/log/apache2/error.log
+                      
+                      exit 1
+                    fi
+                    
+                    sleep 2
+                  done
