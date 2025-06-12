@@ -24,10 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-7rjnw*b+js&+%idwkoq%+q$ti^$5&dn)#@=jkn=)qtfs$r-+o$"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+
+if not SECRET_KEY:
+    raise ValueError(
+        "A variável de ambiente DJANGO_SECRET_KEY não foi definida. Adicione-a ao seu arquivo de variáveis de ambiente .env."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["0.0.0.0", "localhost", "http://localhost:5173"]
 
@@ -202,42 +207,13 @@ STORAGES = {
     },
 }
 
-print(f"AWS_ACCESS_KEY_ID existe: {bool(AWS_ACCESS_KEY_ID)}")
-print(f"AWS_SECRET_ACCESS_KEY existe: {bool(AWS_SECRET_ACCESS_KEY)}")
-
 if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
-    print(f"DEFAULT_FILE_STORAGE: {DEFAULT_FILE_STORAGE}")
 else:
-    print("Aviso: Credenciais S3 não encontradas. Usando armazenamento local.")
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     MEDIA_URL = "/uploads/"
     MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
 
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "loggers": {
-        "twitter": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
-        "boto3": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
-        "botocore": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
-    },
-}
