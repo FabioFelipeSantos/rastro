@@ -53,14 +53,14 @@ services:
           - key: PYTHONUNBUFFERED
             value: "1"
 
-    - type: static
+    - type: static_site
       name: rastro-twitterclone
       buildCommand: |
           cd client
           npm install -g pnpm
           pnpm install
           pnpm build
-      staticPublishPath: ./client/dist
+      publishDir: ./client/dist
       headers:
           - path: /*
             name: X-Frame-Options
