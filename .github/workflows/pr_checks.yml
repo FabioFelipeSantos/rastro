@@ -357,6 +357,3 @@ jobs:
 
                   echo "Teste de recursos estáticos concluído!"
               working-directory: ../
-
-    # PROJECT_ENV=${{ secrets.PROJECT_ENV }}
-    # PORT=${{ secrets.PORT }}

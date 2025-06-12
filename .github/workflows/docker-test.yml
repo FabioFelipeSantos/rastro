@@ -1,0 +1,95 @@
+name: Docker Setup Test
+
+on:
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+jobs:
+    test-docker:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: .
+
+        steps:
+            - name: Checkout do código
+              uses: actions/checkout@v3
+
+            - name: Instalando o Docker
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y docker.io
+                  sudo systemctl start docker
+                  sudo systemctl enable docker
+                  sudo docker --version
+
+            - name: Instalando o Docker Compose
+              run: |
+                  sudo apt-get install -y docker-compose
+                  docker-compose --version
+
+                  - name: Configurar arquivo.env
+                  run: |
+                      cat > .env << EOF
+                      POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+                      POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+                      POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                      POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                      POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                      POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
+                      EOF
+
+            - name: Rodando o Docker compose
+              run: |
+                  echo "Executando o docker compose..."
+                  docker-compose -f docker-compose-full.yml up -d
+                  echo "Processo pronto! Docker compose está rodando."
+
+            - name: Verificando os containers
+              run: |
+                  echo "Verificando os containers..."
+                  docker ps -a
+
+                  - name: Testar acesso à página inicial
+                  run: |
+                      echo "Verificando logs do Apache para depuração:"
+                      sudo tail -n 20 /var/log/apache2/frontend-error.log || echo "Arquivo de log ainda não criado"
+
+                      echo "Testando acesso à página inicial..."
+                      for i in {1..3}; do
+                        echo "Tentativa $i:"
+                        RESPONSE=$(curl -s -w "\nSTATUS:%{http_code}" --connect-timeout 5 http://localhost/)
+                        
+                        # Extrair o status code da resposta
+                        STATUS=$(echo "$RESPONSE" | grep STATUS: | cut -d':' -f2)
+                        BODY=$(echo "$RESPONSE" | sed '/STATUS:/d')
+                        
+                        echo "Código de status: $STATUS"
+                        
+                        if [ "$STATUS" = "200" ]; then
+                          echo "Acesso à página inicial realizado com sucesso (Status 200)"
+                          # Verificar se é realmente o HTML do React
+                          if echo "$BODY" | grep -q "<!DOCTYPE html>"; then
+                            echo "HTML válido recebido"
+                            echo "Primeiras linhas do HTML:"
+                            echo "$BODY" | head -n 5
+                          fi
+                          break
+                        fi
+                        
+                        if [ $i -eq 3 ] && [ "$STATUS" != "200" ]; then
+                          echo "ERRO: Após várias tentativas, o código de status ainda não é 200"
+                          echo "Conteúdo da resposta:"
+                          echo "$BODY"
+                          
+                          echo "Verificando logs do Apache:"
+                          sudo tail -n 50 /var/log/apache2/frontend-error.log
+                          sudo tail -n 50 /var/log/apache2/error.log
+                          
+                          exit 1
+                        fi
+                        
+                        sleep 2
+                      done
