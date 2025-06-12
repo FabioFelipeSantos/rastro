@@ -6,6 +6,7 @@ import * as S from "./styles";
 import { AppContainer } from "../../components/app-layout/AppContainer";
 import { Button } from "../../components/Button";
 import { Header } from "../../components/Header";
+import womanImage from "../../images/principal.png";
 
 const cardsContent: { icon: ReactNode; title: string; text: string }[] = [
   {
@@ -41,7 +42,7 @@ export const Home: FC = () => {
 
               <img
                 className="on-tablet"
-                src="src/images/principal.png"
+                src={womanImage}
                 alt="Imagem de uma mulher tomando café e clicando em um telefone"
               />
 
@@ -80,7 +81,7 @@ export const Home: FC = () => {
               </S.CTASocialIcons>
             </div>
             <img
-              src="src/images/principal.png"
+              src={womanImage}
               alt="Imagem de uma mulher tomando café e clicando em um telefone"
             />
           </S.CTAContainer>
