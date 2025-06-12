@@ -8,6 +8,7 @@ services:
     - type: web
       name: rastro-api
       runtime: python
+      plan: free
       region: oregon
       buildCommand: |
           cd server
@@ -53,8 +54,10 @@ services:
           - key: PYTHONUNBUFFERED
             value: "1"
 
-    - type: static_site
+    - type: web
       name: rastro-twitterclone
+      runtime: static
+      plan: free
       buildCommand: |
           cd client
           npm install -g pnpm
