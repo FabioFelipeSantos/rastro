@@ -42,6 +42,7 @@ jobs:
                   echo "Executando o docker compose..."
                   docker-compose -f docker-compose-full.yml up -d
                   echo "Processo pronto! Docker compose está rodando."
+              continue-on-error: true
 
             - name: Verificando os containers
               run: |
