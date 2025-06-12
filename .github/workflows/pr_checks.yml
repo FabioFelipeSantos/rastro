@@ -51,6 +51,7 @@ jobs:
                   POSTGRES_USER=${{ secrets.POSTGRES_USER }}
                   POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
                   POSTGRES_DB_TEST=${{ secrets.POSTGRES_DB_TEST }}
+                  DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
                   EOF
 
             - name: Configurar docker

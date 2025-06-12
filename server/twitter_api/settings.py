@@ -32,7 +32,7 @@ if not SECRET_KEY:
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["0.0.0.0", "localhost", "http://localhost:5173"]
 
@@ -91,10 +91,6 @@ WSGI_APPLICATION = "twitter_api.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-print(
-    os.getenv("POSTGRES_DB"),
-)
 
 DATABASES = {
     "default": {
