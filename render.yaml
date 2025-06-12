@@ -63,7 +63,7 @@ services:
           npm install -g pnpm
           pnpm install
           pnpm build
-      publishDir: ./client/dist
+      staticPublishPath: ./client/dist
       headers:
           - path: /*
             name: X-Frame-Options
