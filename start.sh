@@ -1,27 +1,23 @@
 #!/bin/bash
-set -e
+echo "Começando a instalação..."
 
-# Criar diretórios para logs se não existirem
-mkdir -p /var/log/apache2 /var/log/supervisor
-touch /var/log/django_all.log /var/log/django_all_error.log
-chmod 666 /var/log/django_all.log /var/log/django_all_error.log
+echo "Instalando configuração do Apache..."
+cp apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 
-cd /app/server
+echo "Rodando build do client..."
+cd client/
+pnpm install
+pnpm build
 
-# Verificar variáveis de ambiente
-if [ ! -f .env ]; then
-    echo "Arquivo .env não encontrado. Você precisa criar um arquivo de variáveis de ambiente configurando seu ambiente"
-    exit 1
-fi
+echo "Removendo arquivos antigos do servidor e copiando os novos..."
+rm -rf /var/www/html/*
+cp -r dist/* /var/www/html/
 
-# Esperar pelo PostgreSQL
-echo "Aguardando PostgreSQL inicializar..."
-until PGPASSWORD=${POSTGRES_PASSWORD} psql -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c '\q'; do
-  echo "PostgreSQL ainda não está disponível - esperando..."
-  sleep 2
-done
-echo "PostgreSQL disponível!"
+echo "Instalando dependências da API..."
+cd ../server/
+$(poetry env activate)
+poetry install --no-root
+poetry run python manage.py collectstatic --noinput
 
-# Iniciar o supervisor para gerenciar processos
-echo "Iniciando serviços com supervisor..."
-exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+deactivate
+gunicorn twitter_api.wsgi
