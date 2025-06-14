@@ -26,7 +26,7 @@ export const tweetApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTweets: builder.query<TweetListResponse, string>({
       query: (token: string) => ({
-        url: "/tweets",
+        url: "/tweets/",
         method: "GET",
         headers: getHeader(token),
       }),
@@ -55,7 +55,7 @@ export const tweetApiSlice = apiSlice.injectEndpoints({
     }),
     reactionsByUser: builder.query<TweetReactionsResponse, { tweetId: number; token: string }>({
       query: ({ tweetId, token }) => ({
-        url: `/tweets/${tweetId}/reacted-by-user`,
+        url: `/tweets/${tweetId}/reacted-by-user/`,
         method: "GET",
         headers: getHeader(token),
       }),

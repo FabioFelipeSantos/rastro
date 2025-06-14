@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useCallback, useState, type FC } from "react";
 import { Menu, MenuOpen } from "@mui/icons-material";
 import { useTheme } from "styled-components";
 
@@ -12,11 +12,13 @@ export const Header: FC = () => {
   const theme = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
-  window.addEventListener("resize", () => {
+  const handleMenuClick = useCallback(() => {
     if (window.innerWidth > parseInt(theme.breakpoints.mobile.replace("px", ""))) {
       setIsMenuOpen(false);
+    } else {
+      setIsMenuOpen((state) => !state);
     }
-  });
+  }, [theme.breakpoints.mobile]);
 
   const handleLoginClick = () => {
     setIsMenuOpen((state) => !state);
@@ -26,7 +28,7 @@ export const Header: FC = () => {
   const menuContent = () => {
     return (
       <S.HeaderContentContainer $isBurgerMenu={isMenuOpen}>
-        <S.LinksContainer onClick={() => setIsMenuOpen((state) => !state)}>
+        <S.LinksContainer onClick={handleMenuClick}>
           <Link to="/">Home</Link>
           <Link to="/">Explorar</Link>
           <Link to="/">Sobre</Link>
@@ -46,9 +48,7 @@ export const Header: FC = () => {
   const burgerMenu = () => {
     return (
       <S.BurgerMenuContainer>
-        <S.BurgerMenuStyles onClick={() => setIsMenuOpen((state) => !state)}>
-          {!isMenuOpen ? <Menu /> : <MenuOpen />}
-        </S.BurgerMenuStyles>
+        <S.BurgerMenuStyles onClick={handleMenuClick}>{!isMenuOpen ? <Menu /> : <MenuOpen />}</S.BurgerMenuStyles>
 
         {isMenuOpen && <div>{menuContent()}</div>}
       </S.BurgerMenuContainer>
