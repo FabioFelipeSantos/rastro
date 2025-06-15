@@ -13,6 +13,6 @@ git fetch origin main
 git reset --hard origin/main
 
 echo ">>> Instalando dependências do projeto ..."
-./start.sh
+sudo ./start.sh
 
 echo ">>> Deploy automático concluído com sucesso!"
