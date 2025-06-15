@@ -2,6 +2,8 @@
 
 set -e
 
+APP_HOME="$1"
+
 export PATH="$APP_HOME/.local/bin:$PATH"
 export NVM_DIR="$APP_HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Para rodar o NVM

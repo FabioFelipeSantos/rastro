@@ -18,6 +18,6 @@ git fetch origin main
 git reset --hard origin/main
 
 echo ">>> Instalando dependências do projeto ..."
-sudo APP_HOME=$APP_HOME ./start.sh
+sudo ./start.sh "$APP_HOME"
 
 echo ">>> Deploy automático concluído com sucesso!"
