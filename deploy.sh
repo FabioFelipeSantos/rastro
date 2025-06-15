@@ -2,10 +2,14 @@
 
 set -e
 
+if [ -z "$APP_HOME" ]; then
+  echo "Variável de ambiente APP_HOME não definida nas actions do GitHub. Essa variável é necessária para o deploy automático. Ela não deve apontar para o diretório do projeto em si, mas sim do usuário que está rodando o deploy automático."
+  exit 1
+fi
+
 echo ">>> Iniciando deploy automático do projeto"
 
-cd "$(dirname "$0")"
-source ./env.sh
+cd "$APP_HOME/app"
 
 echo ">>> Baixando atualizações do repositório remoto ..."
 

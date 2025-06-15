@@ -2,11 +2,6 @@
 
 set -e
 
-if [ -z "$APP_HOME" ]; then
-  echo "Variável de ambiente APP_HOME não definida. Defina-a para o diretório do projeto."
-  exit 1
-fi
-
 export PATH="$APP_HOME/.local/bin:$PATH"
 export NVM_DIR="$APP_HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Para rodar o NVM
