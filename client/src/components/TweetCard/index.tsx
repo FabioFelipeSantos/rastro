@@ -23,6 +23,7 @@ import {
   toggleUserReaction,
   getExpandedTweetInfo,
   toggleExpandRetweets,
+  getUserReactions,
 } from "../../store/reducers/tweetSlice";
 import { tokenFromState } from "../../store/reducers/user/authSlice";
 import { openModal } from "../../store/reducers/modalSlice";
@@ -39,11 +40,12 @@ type TweetCardProps = {
 
 export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromProfile = false }) => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [isSendingAction, setIsSendingAction] = useState<boolean>(false);
 
   const token = useAppSelector(tokenFromState);
-  const dispatch = useAppDispatch();
   const userBio = useAppSelector(getBio);
+  const userReactionsOnThisTweet = useAppSelector(getUserReactions)[tweet.id];
   const followedUsers = useAppSelector(followingUsers);
   const [sendTweetAction] = useSendATweetActionMutation();
   const [removeTweetAction] = useRemoveTweetActionMutation();
@@ -284,12 +286,16 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
     tweet.user.nickname,
   ]);
 
+  const handleNavigateToProfile = useCallback(() => {
+    navigate(`/main/profile/${tweet.user.id}`);
+  }, [navigate, tweet.user.id]);
+
   return (
     <>
       <S.TweetCardContainer $isRetweet={isRetweet}>
         {!fromProfile && (
           <AvatarImageSmall
-            onClick={() => navigate(`/main/profile/${tweet.user.id}`)}
+            onClick={handleNavigateToProfile}
             src={
               tweet.user.avatar_url
                 ? getImageUrl(tweet.user.avatar_url)
@@ -302,9 +308,17 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
 
         <S.TweetContent>
           <S.TweetHeader $isRetweet={isRetweet}>
-            <strong>{tweet.user.first_name}</strong>
+            <strong
+              className="hover-hand-cursor"
+              onClick={handleNavigateToProfile}
+            >
+              {tweet.user.first_name}
+            </strong>
 
-            <span>
+            <span
+              className="hover-hand-cursor"
+              onClick={handleNavigateToProfile}
+            >
               @{tweet.user.nickname} · {timeAgo(tweet.created_at)}
             </span>
 
@@ -330,11 +344,25 @@ export const TweetCard: FC<TweetCardProps> = ({ tweet, isRetweet = false, fromPr
             {tweetActionsButtons.map((tweetAction) => {
               if (tweetAction.action === "retweet" && isRetweet) return null;
 
+              let isDisabledToNotAllowDislikeAndLike: boolean = false;
+
+              if (userReactionsOnThisTweet) {
+                if (tweetAction.action === "like" && userReactionsOnThisTweet.dislike) {
+                  isDisabledToNotAllowDislikeAndLike = true;
+                }
+
+                if (tweetAction.action === "dislike" && userReactionsOnThisTweet.like) {
+                  isDisabledToNotAllowDislikeAndLike = true;
+                }
+              }
+
               return (
                 <S.ActionButton
                   key={tweetAction.action}
                   disabled={
-                    isSendingAction || (userBio?.user?.id === tweet.user.id && !(tweetAction.action === "retweet"))
+                    isSendingAction ||
+                    (userBio?.user?.id === tweet.user.id && !(tweetAction.action === "retweet")) ||
+                    isDisabledToNotAllowDislikeAndLike
                   }
                   onClick={() => handleTweetAction(tweet.id, tweetAction.action)}
                   $isReacted={tweetAction.reacted}

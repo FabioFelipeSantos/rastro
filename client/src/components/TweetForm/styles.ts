@@ -13,6 +13,7 @@ export const AvatarImageSmall = styled.img`
   object-position: center;
   border-radius: 50%;
   margin-right: ${({ theme }) => theme.spacing(1.5)};
+  aspect-ratio: 1;
 
   &:hover {
     cursor: pointer;

@@ -15,6 +15,13 @@ export const TweetCardContainer = styled.article<{ $isRetweet?: boolean }>`
 
 export const TweetContent = styled.div`
   flex-grow: 1;
+
+  .hover-hand-cursor:hover {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-color: ${({ theme }) => theme.applyAlpha(theme.colors.primary, 0.4)};
+  }
 `;
 
 export const TweetHeader = styled.div<{ $isRetweet?: boolean }>`
