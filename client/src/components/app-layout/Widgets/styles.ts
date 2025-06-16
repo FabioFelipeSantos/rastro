@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const WidgetsContainerStyles = styled.aside`
-  width: ${({ theme }) => theme.spacing(35.2)};
+  width: ${({ theme }) => theme.spacing(42)};
   padding: ${({ theme }) => theme.spacing(1.6)};
   position: sticky;
   top: 0;
@@ -21,5 +21,13 @@ export const WidgetBox = styled.div`
   h3 {
     margin-top: 0;
     font-size: 1.1rem;
+  }
+
+  p:hover {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 6px;
+
+    text-decoration-color: ${({ theme }) => theme.applyAlpha(theme.colors.primary, 0.4)};
   }
 `;
