@@ -18,7 +18,6 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 APPEND_SLASH = True
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
-
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
