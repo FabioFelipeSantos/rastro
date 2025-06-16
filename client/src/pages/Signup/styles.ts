@@ -154,7 +154,9 @@ export const FormField = styled.div`
     font-size: ${({ theme }) => theme.sizing(1.4)};
 
     span {
-      opacity: 0.8;
+      margin-left: ${({ theme }) => theme.spacing(0.8)};
+      opacity: 0.4;
+      font-style: italic;
     }
   }
 `;

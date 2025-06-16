@@ -94,7 +94,7 @@ export const Signup: FC = () => {
 
             <S.FormField>
               <label htmlFor="last_name">
-                Sobrenome <span>(opcional!!)</span>
+                Sobrenome <span>opcional</span>
               </label>
               <Input
                 {...register("last_name")}
