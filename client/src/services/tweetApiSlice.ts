@@ -48,7 +48,7 @@ export const tweetApiSlice = apiSlice.injectEndpoints({
     }),
     removeTweetAction: builder.mutation<TweetStatisticsResponse, TweetActionsArgs>({
       query: ({ token, tweet_id, action }) => ({
-        url: `tweets/${tweet_id}/${RemovingActions[action]}/`,
+        url: `/tweets/${tweet_id}/${RemovingActions[action]}/`,
         method: "POST",
         headers: getHeader(token),
       }),
@@ -72,7 +72,7 @@ export const tweetApiSlice = apiSlice.injectEndpoints({
       { token: string; tweetId: number; type?: "retweet" | "share" }
     >({
       query: ({ token, tweetId, type }) => ({
-        url: `/tweets/${tweetId}/associated-tweets${type ? `?type=${type}` : ""}`,
+        url: `/tweets/${tweetId}/associated-tweets/${type ? `?type=${type}` : ""}`,
         method: "GET",
         headers: getHeader(token),
       }),
