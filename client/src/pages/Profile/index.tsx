@@ -1,11 +1,15 @@
 import { useState, useEffect, type FC } from "react";
-
 import * as S from "./styles";
 import { Button } from "../../components/Button";
 import { TweetCard } from "../../components/TweetCard";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { user } from "../../store/reducers/user/userSlice";
-import { userTweets } from "../../store/reducers/tweetSlice";
+import {
+  userTweets,
+  viewedProfileTweets,
+  setViewedProfileTweets,
+  clearViewedProfileTweets,
+} from "../../store/reducers/tweetSlice";
 import { getBio } from "../../store/reducers/user/bioSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import { userApiSlice } from "../../services/userApiSlice";
@@ -20,30 +24,36 @@ import { avatarPath } from "../../utils/getAvatarUrlPath";
 export const ProfilePage: FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfileInfo, setUserProfileInfo] = useState<{ user: UserProfile["user"]; bio: UserProfile["bio"] } | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const { userId } = useParams<{ userId: string }>();
+
   const currentUser = useAppSelector(user);
   const currentUserBio = useAppSelector(getBio);
-  const currentUserTweets = useAppSelector(userTweets);
   const token = useAppSelector(tokenFromState);
+
+  const loggedInUserTweets = useAppSelector(userTweets);
+  const profileTweets = useAppSelector(viewedProfileTweets);
 
   useEffect(() => {
     async function fetchProfileData() {
       setIsLoading(true);
       try {
         if (currentUser.id === userId) {
-          setUserProfile({
+          setUserProfileInfo({
             user: currentUser,
             bio: currentUserBio,
-            tweets: currentUserTweets,
           });
         } else {
           const response = await dispatch(
             userApiSlice.endpoints.userProfile.initiate({ token: token!, userId: userId! }),
           );
-          const profileData = executeQuery(response);
-          setUserProfile(profileData);
+          const profileData = executeQuery<UserProfile>(response);
+
+          setUserProfileInfo({ user: profileData.user, bio: profileData.bio });
+          dispatch(setViewedProfileTweets(profileData.tweets));
         }
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
@@ -70,7 +80,11 @@ export const ProfilePage: FC = () => {
       );
       setIsLoading(false);
     }
-  }, [userId, currentUser, currentUserBio, currentUserTweets, token, dispatch]);
+
+    return () => {
+      dispatch(clearViewedProfileTweets());
+    };
+  }, [userId, currentUser, currentUserBio, token, dispatch]);
 
   if (isLoading) {
     return (
@@ -80,9 +94,11 @@ export const ProfilePage: FC = () => {
     );
   }
 
-  if (!userProfile) {
+  if (!userProfileInfo) {
     return <p>Não foi possível carregar o perfil.</p>;
   }
+
+  const tweetsToDisplay = currentUser.id === userId ? loggedInUserTweets : profileTweets;
 
   return (
     <>
@@ -90,11 +106,11 @@ export const ProfilePage: FC = () => {
         <S.ProfileAvatarContainer>
           <S.ProfileAvatar
             src={
-              userProfile.bio.avatar
-                ? getImageUrl(userProfile.bio.avatar.file_path)
-                : avatarPath(userProfile.user.first_name, userProfile.user.last_name)
+              userProfileInfo.bio.avatar
+                ? getImageUrl(userProfileInfo.bio.avatar.file_path)
+                : avatarPath(userProfileInfo.user.first_name, userProfileInfo.user.last_name)
             }
-            alt={`Foto do usuário ${userProfile.user.first_name}`}
+            alt={`Foto do usuário ${userProfileInfo.user.first_name}`}
           />
           {currentUser.id === userId && (
             <Button
@@ -106,22 +122,22 @@ export const ProfilePage: FC = () => {
         </S.ProfileAvatarContainer>
 
         <S.ProfileInfo>
-          <h2>{userProfile.user.first_name}</h2>
-          <p>@{userProfile.user.nickname}</p>
-          <p>{userProfile.bio.text}</p>
+          <h2>{userProfileInfo.user.first_name}</h2>
+          <p>@{userProfileInfo.user.nickname}</p>
+          <p>{userProfileInfo.bio.text}</p>
           <S.ProfileStats>
             <span>
-              <strong>{userProfile.bio.user.following_count}</strong> Seguindo
+              <strong>{userProfileInfo.bio.user.following_count}</strong> Seguindo
             </span>
             <span>
-              <strong>{userProfile.bio.user.follower_count}</strong> Seguidores
+              <strong>{userProfileInfo.bio.user.follower_count}</strong> Seguidores
             </span>
           </S.ProfileStats>
         </S.ProfileInfo>
       </S.ProfileHeaderContainer>
 
-      {userProfile.tweets && userProfile.tweets.length > 0 ? (
-        userProfile.tweets.map((tweet) => (
+      {tweetsToDisplay && tweetsToDisplay.length > 0 ? (
+        tweetsToDisplay.map((tweet) => (
           <TweetCard
             key={tweet.id}
             tweet={tweet}

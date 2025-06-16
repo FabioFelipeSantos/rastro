@@ -12,6 +12,7 @@ type ExpandedTweetInfo = {
 type TweetState = {
   userTweets: Tweet[];
   tweets: Tweet[];
+  viewedProfileTweets: Tweet[];
   userReactions: UserReactionsMap;
   cachedRetweets: RetweetsMap;
   expandedTweet: ExpandedTweetInfo;
@@ -21,6 +22,7 @@ type TweetState = {
 const initialState: TweetState = {
   tweets: [],
   userTweets: [],
+  viewedProfileTweets: [],
   userReactions: {},
   cachedRetweets: {},
   expandedTweet: {
@@ -41,6 +43,12 @@ const tweetSlice = createSlice({
     },
     setAllTweets: (state, action: PayloadAction<Tweet[]>) => {
       state.tweets = action.payload;
+    },
+    setViewedProfileTweets: (state, action: PayloadAction<Tweet[]>) => {
+      state.viewedProfileTweets = action.payload;
+    },
+    clearViewedProfileTweets: (state) => {
+      state.viewedProfileTweets = [];
     },
     addTweet: (state, action: PayloadAction<Tweet>) => {
       state.userTweets.unshift(action.payload);
@@ -63,6 +71,11 @@ const tweetSlice = createSlice({
         userTweet.statistics[action.payload.type]++;
       }
 
+      const viwedProfileTweet = state.viewedProfileTweets.find((tweet) => tweet.id === action.payload.id);
+      if (viwedProfileTweet) {
+        viwedProfileTweet.statistics[action.payload.type]++;
+      }
+
       Object.values(state.cachedRetweets).forEach((retweetList) => {
         const cachedTweet = retweetList.find((retweet) => retweet.id === action.payload.id);
         if (cachedTweet) {
@@ -82,6 +95,14 @@ const tweetSlice = createSlice({
       const userTweet = state.userTweets.find((tweet) => tweet.id === action.payload.id);
       if (userTweet) {
         userTweet.statistics[action.payload.type] = Math.max(0, userTweet.statistics[action.payload.type] - 1);
+      }
+
+      const viewedProfileTweet = state.viewedProfileTweets.find((tweet) => tweet.id === action.payload.id);
+      if (viewedProfileTweet) {
+        viewedProfileTweet.statistics[action.payload.type] = Math.max(
+          0,
+          viewedProfileTweet.statistics[action.payload.type] - 1,
+        );
       }
 
       Object.values(state.cachedRetweets).forEach((retweetList) => {
@@ -163,6 +184,7 @@ const tweetSlice = createSlice({
   selectors: {
     userTweets: (state) => state.userTweets,
     allTweets: (state) => state.tweets,
+    viewedProfileTweets: (state) => state.viewedProfileTweets,
     getUserReactions: (state) => state.userReactions,
     getCachedRetweetsByTweetId: (state, tweetId: number) => state.cachedRetweets[tweetId] || null,
     getExpandedTweetInfo: (state) => state.expandedTweet,
@@ -183,10 +205,18 @@ export const {
   setCachedRetweets,
   toggleExpandRetweets,
   addRetweetToCache,
+  setViewedProfileTweets,
+  clearViewedProfileTweets,
 } = tweetSlice.actions;
 
-export const { allTweets, userTweets, getUserReactions, getCachedRetweetsByTweetId, getExpandedTweetInfo } =
-  tweetSlice.selectors;
+export const {
+  allTweets,
+  userTweets,
+  getUserReactions,
+  getCachedRetweetsByTweetId,
+  getExpandedTweetInfo,
+  viewedProfileTweets,
+} = tweetSlice.selectors;
 
 export const getUserReactionsByTweetId = createSelector(
   [getUserReactions, (_, tweetId: Tweet["id"]) => tweetId],
