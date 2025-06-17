@@ -23,6 +23,8 @@ services:
         environment:
             - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
         restart: always
+        volumes:
+            - media_data:/app/uploads
         depends_on:
             postgres:
                 condition: service_healthy
@@ -37,8 +39,11 @@ services:
         ports:
             - "80:80"
         restart: always
+        volumes:
+            - media_data:/usr/share/nginx/html/uploads
         depends_on:
             - backend
 
 volumes:
     postgres_data:
+    media_data:

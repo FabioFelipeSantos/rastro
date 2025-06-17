@@ -22,4 +22,4 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "twitter_api.wsgi:application"]
+CMD ["poetry", "run", "gunicorn", "--access-logfile", "/var/log/app_access.log", "--error-logfile", "/var/log/app_error.log", "--log-level", "debug", "--workers", "3", "--bind", "0.0.0.0:8000", "twitter_api.wsgi:application"]
