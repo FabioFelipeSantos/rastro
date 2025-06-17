@@ -39,7 +39,7 @@ export const Widgets: FC = () => {
       <WidgetBox>
         <Input
           type="search"
-          placeholder="Buscar no Twitter"
+          placeholder="Buscar no Rastro"
         />
       </WidgetBox>
 
