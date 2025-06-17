@@ -10,9 +10,6 @@ from twitter.models import Avatar
 class AvatarService:
     @staticmethod
     def debug_storage_info():
-        """Imprime informações de diagnóstico sobre o storage configurado"""
-        import inspect
-
         storage_class = default_storage.__class__
         storage_module = storage_class.__module__
         storage_name = storage_class.__name__
@@ -63,7 +60,7 @@ class AvatarService:
     @staticmethod
     def validate_avatar_file(file):
         """Valida o arquivo de avatar (tamanho e tipo)"""
-        max_size = 5 * 1024 * 1024  # 5MB
+        max_size = 5 * 1024 * 1024
         if file.size > max_size:
             raise ValueError(
                 f"O tamanho da imagem não pode exceder 5MB. Tamanho atual: {file.size / (1024 * 1024):.2f}MB"
@@ -102,13 +99,16 @@ class AvatarService:
 
             stored_path = default_storage.save(file_path, file)
 
-            file_url = default_storage.url(stored_path)
+            if settings.STORAGE_TYPE == "S3":
+                path_to_save_in_db = default_storage.url(stored_path)
+            else:
+                path_to_save_in_db = stored_path
 
             avatar = Avatar.objects.create(
                 bio=bio,
                 file_name=file.name,
                 file_saved_name=file_saved_name,
-                file_path=file_url,
+                file_path=path_to_save_in_db,
             )
 
             return avatar

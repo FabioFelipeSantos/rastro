@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 from twitter.models import Bio, User
 from .avatar_serializer import AvatarSerializer
@@ -31,7 +32,22 @@ class UserBasicSerializer(serializers.ModelSerializer):
 
     def get_avatar_url(self, obj):
         if hasattr(obj, "bio") and hasattr(obj.bio, "avatar") and obj.bio.avatar:
-            return obj.bio.avatar.file_path
+            """Retorna a URL do arquivo de avatar"""
+            path_from_db = obj.bio.avatar.file_path
+
+            if path_from_db.startswith(("http://", "https://")):
+                return path_from_db
+
+            if settings.STORAGE_TYPE == "S3":
+                return path_from_db
+            else:
+                request = self.context.get("request")
+                relative_path = f"{settings.MEDIA_URL}{path_from_db}"
+
+                if request:
+                    return request.build_absolute_uri(relative_path)
+
+                return relative_path
 
 
 class BioSerializer(serializers.ModelSerializer):

@@ -354,6 +354,7 @@ class UserViewSet(viewsets.ModelViewSet):
         update_messages = []
         error_messages = []
 
+        context = self.get_serializer_context()
         try:
             user_data = {}
             user_fields = [
@@ -392,7 +393,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
                     if not error_messages:
                         user_serializer = UserSerializer(
-                            user, data=user_data, partial=True
+                            user, data=user_data, partial=True, context=context
                         )
                         if user_serializer.is_valid():
                             with transaction.atomic():
@@ -415,11 +416,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
                 if not bio:
                     bio = BioService.create_bio(user, bio_data, allow_empty=True)
-                    response_data["bio"] = BioSerializer(bio).data
+                    response_data["bio"] = BioSerializer(bio, context=context).data
                     update_messages.append("Bio criada com sucesso.")
                 else:
                     bio = BioService.update_bio(bio, bio_data)
-                    response_data["bio"] = BioSerializer(bio).data
+                    response_data["bio"] = BioSerializer(bio, context=context).data
                     update_messages.append("Bio atualizada.")
 
             if "avatar" in request.FILES:
@@ -434,9 +435,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
                 try:
                     avatar = AvatarService.create_avatar(bio, request.FILES["avatar"])
-                    if "bio" not in response_data:
-                        response_data["bio"] = BioSerializer(bio).data
-                    response_data["bio"]["avatar"] = AvatarSerializer(avatar).data
+                    bio = BioService.get_bio_by_user(user)
+                    response_data["bio"] = BioSerializer(bio, context=context).data
+                    response_data["bio"]["avatar"] = AvatarSerializer(
+                        avatar, context=context
+                    ).data
                     update_messages.append("Avatar atualizado.")
                 except ValueError as e:
                     error_messages.append(f"Erro no avatar: {str(e)}")

@@ -1,8 +1,29 @@
+from django.conf import settings
 from rest_framework import serializers
 from twitter.models import Avatar
 
 
 class AvatarSerializer(serializers.ModelSerializer):
+    file_path = serializers.SerializerMethodField(method_name="get_file_url")
+
+    def get_file_url(self, obj):
+        """Retorna a URL do arquivo de avatar"""
+        path_from_db = obj.file_path
+
+        if path_from_db.startswith(("http://", "https://")):
+            return path_from_db
+
+        if settings.STORAGE_TYPE == "S3":
+            return path_from_db
+        else:
+            request = self.context.get("request")
+            relative_path = f"{settings.MEDIA_URL}{path_from_db}"
+
+            if request:
+                return request.build_absolute_uri(relative_path)
+
+            return relative_path
+
     class Meta:
         model = Avatar
         fields = [
