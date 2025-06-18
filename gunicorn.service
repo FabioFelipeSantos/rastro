@@ -1,0 +1,14 @@
+[Unit]
+Description=Instancia Gunicorn para servir a API do Rastro
+After=network.target
+
+[Service]
+User=nome_user
+Group=nome_user
+WorkingDirectory=$HOME/app/server
+EnvironmentFile=$HOME/app/server/.env
+ExecStart=$HOME/.local/bin/poetry run gunicorn --workers 3 --bind 0.0.0.0:8000 twitter_api.wsgi
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
