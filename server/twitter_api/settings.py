@@ -23,7 +23,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://" + origin
-    for origin in os.getenv("DJANGO_CSFR_TRUSTED_ORIGINS", "localhost").split(",")
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "localhost").split(",")
 ]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False
